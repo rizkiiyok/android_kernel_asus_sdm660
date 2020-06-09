@@ -321,7 +321,7 @@ ieee80211_add_rx_radiotap_header(struct ieee80211_local *local,
 	else if (status->flag & RX_FLAG_5MHZ)
 		channel_flags |= IEEE80211_CHAN_QUARTER;
 
-	if (status->band == NL80211_BAND_5GHZ)
+	if (status->band == IEEE80211_BAND_5GHZ)
 		channel_flags |= IEEE80211_CHAN_OFDM | IEEE80211_CHAN_5GHZ;
 	else if (status->flag & (RX_FLAG_HT | RX_FLAG_VHT))
 		channel_flags |= IEEE80211_CHAN_DYN | IEEE80211_CHAN_2GHZ;
@@ -2817,7 +2817,7 @@ ieee80211_rx_h_action(struct ieee80211_rx_data *rx)
 
 		switch (mgmt->u.action.u.measurement.action_code) {
 		case WLAN_ACTION_SPCT_MSR_REQ:
-			if (status->band != NL80211_BAND_5GHZ)
+			if (status->band != IEEE80211_BAND_5GHZ)
 				break;
 
 			if (len < (IEEE80211_MIN_ACTION_SIZE +
@@ -3041,18 +3041,9 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_data *rx)
 	case cpu_to_le16(IEEE80211_STYPE_PROBE_RESP):
 		/* process for all: mesh, mlme, ibss */
 		break;
-	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
-		if (is_multicast_ether_addr(mgmt->da) &&
-		    !is_broadcast_ether_addr(mgmt->da))
-			return RX_DROP_MONITOR;
-
-		/* process only for station/IBSS */
-		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
-		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
-			return RX_DROP_MONITOR;
-		break;
 	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
 	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
+	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
 	case cpu_to_le16(IEEE80211_STYPE_DISASSOC):
 		if (is_multicast_ether_addr(mgmt->da) &&
 		    !is_broadcast_ether_addr(mgmt->da))
@@ -3333,8 +3324,6 @@ static bool ieee80211_accept_frame(struct ieee80211_rx_data *rx)
 	switch (sdata->vif.type) {
 	case NL80211_IFTYPE_STATION:
 		if (!bssid && !sdata->u.mgd.use_4addr)
-			return false;
-		if (ieee80211_is_robust_mgmt_frame(skb) && !rx->sta)
 			return false;
 		if (multicast)
 			return true;
@@ -3632,7 +3621,7 @@ void ieee80211_rx_napi(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
 
 	WARN_ON_ONCE(softirq_count() == 0);
 
-	if (WARN_ON(status->band >= NUM_NL80211_BANDS))
+	if (WARN_ON(status->band >= IEEE80211_NUM_BANDS))
 		goto drop;
 
 	sband = local->hw.wiphy->bands[status->band];

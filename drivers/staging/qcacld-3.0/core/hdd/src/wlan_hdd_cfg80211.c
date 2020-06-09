@@ -5436,8 +5436,8 @@ int wlan_hdd_send_roam_auth_event(hdd_adapter_t *adapter, uint8_t *bssid,
 			ETH_ALEN + req_rsn_len + rsp_rsn_len +
 			sizeof(uint8_t) + SIR_REPLAY_CTR_LEN +
 			SIR_KCK_KEY_LEN + roam_info_ptr->kek_len +
-			sizeof(uint16_t) + sizeof(uint8_t) +
-			(9 * NLMSG_HDRLEN) + fils_params_len,
+			sizeof(uint8_t) + (8 * NLMSG_HDRLEN) +
+			fils_params_len,
 			QCA_NL80211_VENDOR_SUBCMD_KEY_MGMT_ROAM_AUTH_INDEX,
 			GFP_KERNEL);
 
@@ -6689,7 +6689,7 @@ static int __wlan_hdd_cfg80211_wifi_logger_get_ring_data(struct wiphy *wiphy,
 				WLAN_LOG_REASON_CODE_UNUSED,
 				true, false);
 		if (QDF_STATUS_SUCCESS != status) {
-			hdd_debug("Failed to trigger bug report");
+			hdd_err("Failed to trigger bug report");
 			return -EINVAL;
 		}
 	} else {
@@ -6761,7 +6761,7 @@ static int hdd_map_req_id_to_pattern_id(hdd_context_t *hdd_ctx,
 		}
 	}
 	mutex_unlock(&hdd_ctx->op_ctx.op_lock);
-	return -ENOBUFS;
+	return -EINVAL;
 }
 
 /**
@@ -6829,8 +6829,7 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
 {
 	struct sSirAddPeriodicTxPtrn *add_req;
 	QDF_STATUS status;
-	uint32_t request_id, len;
-	int32_t ret;
+	uint32_t request_id, ret, len;
 	uint8_t pattern_id = 0;
 	struct qdf_mac_addr dst_addr;
 	uint16_t eth_type = htons(ETH_P_IP);
@@ -6849,34 +6848,29 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
 	/* Parse and fetch request Id */
 	if (!tb[PARAM_REQUEST_ID]) {
 		hdd_err("attr request id failed");
-		ret = -EINVAL;
 		goto fail;
 	}
 
 	request_id = nla_get_u32(tb[PARAM_REQUEST_ID]);
 	if (request_id == MAX_REQUEST_ID) {
 		hdd_err("request_id cannot be MAX");
-		ret = -EINVAL;
 		goto fail;
 	}
 	hdd_debug("Request Id: %u", request_id);
 
 	if (!tb[PARAM_PERIOD]) {
 		hdd_err("attr period failed");
-		ret = -EINVAL;
 		goto fail;
 	}
 	add_req->usPtrnIntervalMs = nla_get_u32(tb[PARAM_PERIOD]);
 	hdd_debug("Period: %u ms", add_req->usPtrnIntervalMs);
 	if (add_req->usPtrnIntervalMs == 0) {
 		hdd_err("Invalid interval zero, return failure");
-		ret = -EINVAL;
 		goto fail;
 	}
 
 	if (!tb[PARAM_SRC_MAC_ADDR]) {
 		hdd_err("attr source mac address failed");
-		ret = -EINVAL;
 		goto fail;
 	}
 	nla_memcpy(add_req->mac_address.bytes, tb[PARAM_SRC_MAC_ADDR],
@@ -6887,13 +6881,11 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
 	if (!qdf_is_macaddr_equal(&add_req->mac_address,
 				  &adapter->macAddressCurrent)) {
 		hdd_err("input src mac address and connected ap bssid are different");
-		ret = -EINVAL;
 		goto fail;
 	}
 
 	if (!tb[PARAM_DST_MAC_ADDR]) {
 		hdd_err("attr dst mac address failed");
-		ret = -EINVAL;
 		goto fail;
 	}
 	nla_memcpy(dst_addr.bytes, tb[PARAM_DST_MAC_ADDR], QDF_MAC_ADDR_SIZE);
@@ -6902,7 +6894,6 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
 
 	if (!tb[PARAM_IP_PACKET]) {
 		hdd_err("attr ip packet failed");
-		ret = -EINVAL;
 		goto fail;
 	}
 	add_req->ucPtrnSize = nla_len(tb[PARAM_IP_PACKET]);
@@ -6913,7 +6904,6 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
 					ETH_HLEN)) {
 		hdd_err("Invalid IP packet len: %d",
 				add_req->ucPtrnSize);
-		ret = -EINVAL;
 		goto fail;
 	}
 
@@ -6948,15 +6938,16 @@ wlan_hdd_add_tx_ptrn(hdd_adapter_t *adapter, hdd_context_t *hdd_ctx,
 	status = sme_add_periodic_tx_ptrn(hdd_ctx->hHal, add_req);
 	if (!QDF_IS_STATUS_SUCCESS(status)) {
 		hdd_err("sme_add_periodic_tx_ptrn failed (err=%d)", status);
-		ret = qdf_status_to_os_return(status);
 		goto fail;
 	}
 
 	EXIT();
+	qdf_mem_free(add_req);
+	return 0;
 
 fail:
 	qdf_mem_free(add_req);
-	return ret;
+	return -EINVAL;
 }
 
 /**
@@ -14812,9 +14803,6 @@ static int __wlan_hdd_cfg80211_change_iface(struct wiphy *wiphy,
 			 TRACE_CODE_HDD_CFG80211_CHANGE_IFACE,
 			 pAdapter->sessionId, type));
 
-	if (wlan_hdd_check_mon_concurrency())
-		return -EINVAL;
-
 	hdd_debug("Device_mode = %d, IFTYPE = 0x%x",
 	       pAdapter->device_mode, type);
 
@@ -14851,8 +14839,6 @@ static int __wlan_hdd_cfg80211_change_iface(struct wiphy *wiphy,
 
 		pRoamProfile = &pWextState->roamProfile;
 		LastBSSType = pRoamProfile->BSSType;
-
-		hdd_thermal_mitigation_disable(pHddCtx);
 
 		switch (type) {
 		case NL80211_IFTYPE_STATION:
@@ -14990,7 +14976,6 @@ done:
 	if (pAdapter->device_mode == QDF_STA_MODE) {
 		hdd_debug("Sending Lpass mode change notification");
 		hdd_lpass_notify_mode_change(pAdapter);
-		hdd_thermal_mitigation_enable(pHddCtx);
 	}
 
 	EXIT();
@@ -16526,6 +16511,8 @@ int wlan_hdd_cfg80211_pmksa_candidate_notify(hdd_adapter_t *adapter,
 					     int index, bool preauth)
 {
 	struct net_device *dev = adapter->dev;
+	hdd_context_t *hdd_ctx = (hdd_context_t *) adapter->pHddCtx;
+	struct pmkid_mode_bits pmkid_modes;
 
 	ENTER();
 	hdd_debug("is going to notify supplicant of:");
@@ -16535,13 +16522,14 @@ int wlan_hdd_cfg80211_pmksa_candidate_notify(hdd_adapter_t *adapter,
 		return -EINVAL;
 	}
 
-	/*
-	 * Supplicant should be notified regardless the PMK caching or OKC
-	 * is enabled in firmware or not
-	 */
-	hdd_debug(MAC_ADDRESS_STR, MAC_ADDR_ARRAY(roam_info->bssid.bytes));
-	cfg80211_pmksa_candidate_notify(dev, index, roam_info->bssid.bytes,
-					preauth, GFP_KERNEL);
+	hdd_get_pmkid_modes(hdd_ctx, &pmkid_modes);
+	if (pmkid_modes.fw_okc) {
+		hdd_debug(MAC_ADDRESS_STR,
+		       MAC_ADDR_ARRAY(roam_info->bssid.bytes));
+		cfg80211_pmksa_candidate_notify(dev, index,
+						roam_info->bssid.bytes,
+						preauth, GFP_KERNEL);
+	}
 	return 0;
 }
 
@@ -16957,13 +16945,6 @@ static int wlan_hdd_cfg80211_connect_start(hdd_adapter_t *pAdapter,
 	pRoamProfile = &pWextState->roamProfile;
 	qdf_mem_zero(&hdd_sta_ctx->conn_info.conn_flag,
 		     sizeof(hdd_sta_ctx->conn_info.conn_flag));
-
-	/*
-	 * Reset the ptk, gtk status flags to avoid using old/previous
-	 * connection status.
-	 */
-	hdd_sta_ctx->conn_info.gtk_installed = false;
-	hdd_sta_ctx->conn_info.ptk_installed = false;
 
 	if (pRoamProfile) {
 		hdd_station_ctx_t *pHddStaCtx;

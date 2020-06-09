@@ -483,7 +483,7 @@ static int msc_configure(struct msc *msc)
 	u32 reg;
 
 	if (msc->mode > MSC_MODE_MULTI)
-		return -EINVAL;
+		return -ENOTSUPP;
 
 	if (msc->mode == MSC_MODE_MULTI)
 		msc_buffer_clear_hw_header(msc);
@@ -625,7 +625,7 @@ static int msc_buffer_contig_alloc(struct msc *msc, unsigned long size)
 		goto err_out;
 
 	ret = -ENOMEM;
-	page = alloc_pages(GFP_KERNEL | __GFP_ZERO | GFP_DMA32, order);
+	page = alloc_pages(GFP_KERNEL | __GFP_ZERO, order);
 	if (!page)
 		goto err_free_sgt;
 
@@ -935,7 +935,7 @@ static int msc_buffer_alloc(struct msc *msc, unsigned long *nr_pages,
 	} else if (msc->mode == MSC_MODE_MULTI) {
 		ret = msc_buffer_multi_alloc(msc, nr_pages, nr_wins);
 	} else {
-		ret = -EINVAL;
+		ret = -ENOTSUPP;
 	}
 
 	if (!ret) {
@@ -1164,7 +1164,7 @@ static ssize_t intel_th_msc_read(struct file *file, char __user *buf,
 		if (ret >= 0)
 			*ppos = iter->offset;
 	} else {
-		ret = -EINVAL;
+		ret = -ENOTSUPP;
 	}
 
 put_count:

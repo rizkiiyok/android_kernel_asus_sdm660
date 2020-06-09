@@ -609,6 +609,10 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			av_dev_drift_afe_cb_handler(data->opcode, data->payload,
 						    data->payload_size);
 		} else {
+			if (rtac_make_afe_callback(data->payload,
+						   data->payload_size))
+				return 0;
+
 		/* Huaqin add for active nxp pa cal function by xudayi at 2018/03/03 start */
 		#ifdef CONFIG_SND_SOC_TFA9874
 		if (atomic_read(&this_afe.tfa_state) == 1) {
@@ -1268,7 +1272,7 @@ static int q6afe_get_params_v2(u16 port_id, int index,
 	afe_get_param.apr_hdr.hdr_field =
 		APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD, APR_HDR_LEN(APR_HDR_SIZE),
 			      APR_PKT_VER);
-	afe_get_param.apr_hdr.pkt_size = sizeof(afe_get_param);
+	afe_get_param.apr_hdr.pkt_size = sizeof(afe_get_param) + param_size;
 	afe_get_param.apr_hdr.src_port = 0;
 	afe_get_param.apr_hdr.dest_port = 0;
 	afe_get_param.apr_hdr.token = index;

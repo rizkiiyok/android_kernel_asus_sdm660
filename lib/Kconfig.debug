@@ -529,7 +529,7 @@ config DEBUG_KMEMLEAK_EARLY_LOG_SIZE
 	int "Maximum kmemleak early log entries"
 	depends on DEBUG_KMEMLEAK
 	range 200 40000
-	default 16000
+	default 400
 	help
 	  Kmemleak must track all the memory allocations to avoid
 	  reporting false positives. Since memory may be allocated or
@@ -1837,16 +1837,6 @@ config TEST_RHASHTABLE
 
 	  If unsure, say N.
 
-config TEST_HASH
-	tristate "Perform selftest on hash functions"
-	default n
-	help
-	  Enable this option to test the kernel's siphash (<linux/siphash.h>)
-	  hash functions on boot (or module load).
-
-	  This is intended to help people writing architecture-specific
-	  optimized versions.  If unsure, say N.
-
 endmenu # runtime tests
 
 config PROVIDE_OHCI1394_DMA_INIT
@@ -2009,16 +1999,6 @@ config PANIC_ON_DATA_CORRUPTION
 	 Select this option to upgrade warnings for potentially
 	 recoverable data corruption scenarios to system-halting panics,
 	 for easier detection and debug.
-
-config CC_WERROR
-	bool "Treat all compile warnings as errors"
-	default n
-	help
-	 Select this option to set compiler warnings as errors,
-	 to prevent easily-fixable problems from creeping into
-	 the codebase.
-
-	 If unsure, say N.
 
 source "samples/Kconfig"
 

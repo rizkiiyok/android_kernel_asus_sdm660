@@ -441,7 +441,6 @@ struct cpu_cycle {
 #define for_each_sched_cluster(cluster) \
 	list_for_each_entry_rcu(cluster, &cluster_head, list)
 
-extern unsigned int sched_disable_window_stats;
 #endif /* CONFIG_SCHED_HMP */
 
 /* CFS-related fields in a runqueue */
@@ -794,7 +793,6 @@ struct rq {
 
 	int cstate, wakeup_latency, wakeup_energy;
 	u64 window_start;
-	u64 load_reported_window;
 	unsigned long hmp_flags;
 
 	u64 cur_irqload;
@@ -1156,7 +1154,7 @@ extern unsigned int  __read_mostly sched_downmigrate;
 extern unsigned int  __read_mostly sysctl_sched_spill_nr_run;
 extern unsigned int  __read_mostly sched_load_granule;
 
-extern void init_new_task_load(struct task_struct *p);
+extern void init_new_task_load(struct task_struct *p, bool idle_task);
 extern u64 sched_ktime_clock(void);
 extern int got_boost_kick(void);
 extern int register_cpu_cycle_counter_cb(struct cpu_cycle_counter_cb *cb);
@@ -1646,7 +1644,7 @@ static inline struct sched_cluster *rq_cluster(struct rq *rq)
 	return NULL;
 }
 
-static inline void init_new_task_load(struct task_struct *p)
+static inline void init_new_task_load(struct task_struct *p, bool idle_task)
 {
 }
 
@@ -2854,18 +2852,6 @@ DECLARE_PER_CPU(struct update_util_data *, cpufreq_update_util_data);
 static inline void cpufreq_update_util(struct rq *rq, unsigned int flags)
 {
         struct update_util_data *data;
-
-#ifdef CONFIG_SCHED_HMP
-	/*
-	 * Skip if we've already reported, but not if this is an inter-cluster
-	 * migration
-	 */
-	if (!sched_disable_window_stats &&
-		(rq->load_reported_window == rq->window_start) &&
-		!(flags & SCHED_CPUFREQ_INTERCLUSTER_MIG))
-		return;
-	rq->load_reported_window = rq->window_start;
-#endif
 
         data = rcu_dereference_sched(*this_cpu_ptr(&cpufreq_update_util_data));
         if (data)

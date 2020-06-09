@@ -369,9 +369,6 @@ static void pseries_lpar_idle(void)
 	 * low power mode by cedeing processor to hypervisor
 	 */
 
-	if (!prep_irq_for_idle())
-		return;
-
 	/* Indicate to hypervisor that we are idle. */
 	get_lppaca()->idle = 1;
 

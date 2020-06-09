@@ -236,9 +236,6 @@ const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
 #define GESTURE_EVENT_W 		KEY_TP_GESTURE_W
 #define GESTURE_EVENT_Z 		KEY_TP_GESTURE_Z
 #define GESTURE_EVENT_SWIPE_UP		KEY_TP_GESTURE_SWIPE_UP
-#define GESTURE_EVENT_SWIPE_DOWN        KEY_TP_GESTURE_SWIPE_DOWN
-#define GESTURE_EVENT_SWIPE_LEFT        KEY_TP_GESTURE_SWIPE_LEFT
-#define GESTURE_EVENT_SWIPE_RIGHT       KEY_TP_GESTURE_SWIPE_RIGHT
 #define GESTURE_EVENT_DOUBLE_CLICK	KEY_TP_GESTURE_DOUBLE_CLICK
 
 const uint16_t gesture_key_array[] = {
@@ -252,9 +249,6 @@ const uint16_t gesture_key_array[] = {
 	GESTURE_EVENT_E,  //GESTURE_WORD_M
 	GESTURE_EVENT_S,  //GESTURE_WORD_S
 	GESTURE_EVENT_SWIPE_UP,  //GESTURE_SLIDE_UP
-	GESTURE_EVENT_SWIPE_DOWN,  //GESTURE_SWIPE_DOWN
-	GESTURE_EVENT_SWIPE_LEFT,  //GESTURE_SWIPE_RIGHT
-	GESTURE_EVENT_SWIPE_RIGHT,  //GESTURE_SWIPE_LEFT
 	KEY_WAKEUP,
 	KEY_WAKEUP,
 	KEY_WAKEUP,
@@ -1364,7 +1358,7 @@ static irqreturn_t nvt_ts_irq_handler(int32_t irq, void *dev_id)
 
 #if WAKEUP_GESTURE
 	if (bTouchIsAwake == 0) {
-		wake_lock_timeout(&gestrue_wakelock, msecs_to_jiffies(700));
+		wake_lock_timeout(&gestrue_wakelock, msecs_to_jiffies(5000));
 	}
 #endif
 

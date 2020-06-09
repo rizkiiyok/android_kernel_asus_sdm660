@@ -693,7 +693,7 @@ static void ieee80211_send_assoc(struct ieee80211_sub_if_data *sdata)
 
 	capab = WLAN_CAPABILITY_ESS;
 
-	if (sband->band == NL80211_BAND_2GHZ) {
+	if (sband->band == IEEE80211_BAND_2GHZ) {
 		capab |= WLAN_CAPABILITY_SHORT_SLOT_TIME;
 		capab |= WLAN_CAPABILITY_SHORT_PREAMBLE;
 	}
@@ -1182,7 +1182,7 @@ ieee80211_sta_process_chanswitch(struct ieee80211_sub_if_data *sdata,
 	struct cfg80211_bss *cbss = ifmgd->associated;
 	struct ieee80211_chanctx_conf *conf;
 	struct ieee80211_chanctx *chanctx;
-	enum nl80211_band current_band;
+	enum ieee80211_band current_band;
 	struct ieee80211_csa_ie csa_ie;
 	struct ieee80211_channel_switch ch_switch;
 	int res;
@@ -1339,11 +1339,11 @@ ieee80211_find_80211h_pwr_constr(struct ieee80211_sub_if_data *sdata,
 	default:
 		WARN_ON_ONCE(1);
 		/* fall through */
-	case NL80211_BAND_2GHZ:
+	case IEEE80211_BAND_2GHZ:
 	case IEEE80211_BAND_60GHZ:
 		chan_increment = 1;
 		break;
-	case NL80211_BAND_5GHZ:
+	case IEEE80211_BAND_5GHZ:
 		chan_increment = 4;
 		break;
 	}
@@ -1892,16 +1892,6 @@ static bool ieee80211_sta_wmm_params(struct ieee80211_local *local,
 		}
 	}
 
-	/* WMM specification requires all 4 ACIs. */
-	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
-		if (params[ac].cw_min == 0) {
-			sdata_info(sdata,
-				   "AP has invalid WMM params (missing AC %d), using defaults\n",
-				   ac);
-			return false;
-		}
-	}
-
 	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
 		mlme_dbg(sdata,
 			 "WMM AC=%d acm=%d aifs=%d cWmin=%d cWmax=%d txop=%d uapsd=%d, downgraded=%d\n",
@@ -1955,7 +1945,7 @@ static u32 ieee80211_handle_bss_capability(struct ieee80211_sub_if_data *sdata,
 	}
 
 	use_short_slot = !!(capab & WLAN_CAPABILITY_SHORT_SLOT_TIME);
-	if (ieee80211_get_sdata_band(sdata) == NL80211_BAND_5GHZ)
+	if (ieee80211_get_sdata_band(sdata) == IEEE80211_BAND_5GHZ)
 		use_short_slot = true;
 
 	if (use_protection != bss_conf->use_cts_prot) {
@@ -2431,8 +2421,7 @@ struct sk_buff *ieee80211_ap_probereq_get(struct ieee80211_hw *hw,
 
 	rcu_read_lock();
 	ssid = ieee80211_bss_get_ie(cbss, WLAN_EID_SSID);
-	if (WARN_ONCE(!ssid || ssid[1] > IEEE80211_MAX_SSID_LEN,
-		      "invalid SSID element (len=%d)", ssid ? ssid[1] : -1))
+	if (WARN_ON_ONCE(ssid == NULL))
 		ssid_len = 0;
 	else
 		ssid_len = ssid[1];
@@ -2744,7 +2733,7 @@ static void ieee80211_rx_mgmt_auth(struct ieee80211_sub_if_data *sdata,
 #define case_WLAN(type) \
 	case WLAN_REASON_##type: return #type
 
-const char *ieee80211_get_reason_code_string(u16 reason_code)
+static const char *ieee80211_get_reason_code_string(u16 reason_code)
 {
 	switch (reason_code) {
 	case_WLAN(UNSPECIFIED);
@@ -2809,11 +2798,6 @@ static void ieee80211_rx_mgmt_deauth(struct ieee80211_sub_if_data *sdata,
 	if (len < 24 + 2)
 		return;
 
-	if (!ether_addr_equal(mgmt->bssid, mgmt->sa)) {
-		ieee80211_tdls_handle_disconnect(sdata, mgmt->sa, reason_code);
-		return;
-	}
-
 	if (ifmgd->associated &&
 	    ether_addr_equal(mgmt->bssid, ifmgd->associated->bssid)) {
 		const u8 *bssid = ifmgd->associated->bssid;
@@ -2863,14 +2847,8 @@ static void ieee80211_rx_mgmt_disassoc(struct ieee80211_sub_if_data *sdata,
 
 	reason_code = le16_to_cpu(mgmt->u.disassoc.reason_code);
 
-	if (!ether_addr_equal(mgmt->bssid, mgmt->sa)) {
-		ieee80211_tdls_handle_disconnect(sdata, mgmt->sa, reason_code);
-		return;
-	}
-
-	sdata_info(sdata, "disassociated from %pM (Reason: %u=%s)\n",
-		   mgmt->sa, reason_code,
-		   ieee80211_get_reason_code_string(reason_code));
+	sdata_info(sdata, "disassociated from %pM (Reason: %u)\n",
+		   mgmt->sa, reason_code);
 
 	ieee80211_set_disassoc(sdata, 0, 0, false, NULL);
 
@@ -4468,7 +4446,7 @@ static int ieee80211_prep_connection(struct ieee80211_sub_if_data *sdata,
 		sdata->vif.bss_conf.basic_rates = basic_rates;
 
 		/* cf. IEEE 802.11 9.2.12 */
-		if (cbss->channel->band == NL80211_BAND_2GHZ &&
+		if (cbss->channel->band == IEEE80211_BAND_2GHZ &&
 		    have_higher_than_11mbit)
 			sdata->flags |= IEEE80211_SDATA_OPERATING_GMODE;
 		else
@@ -4670,7 +4648,7 @@ int ieee80211_mgd_assoc(struct ieee80211_sub_if_data *sdata,
 
 	rcu_read_lock();
 	ssidie = ieee80211_bss_get_ie(req->bss, WLAN_EID_SSID);
-	if (!ssidie || ssidie[1] > sizeof(assoc_data->ssid)) {
+	if (!ssidie) {
 		rcu_read_unlock();
 		kfree(assoc_data);
 		return -EINVAL;

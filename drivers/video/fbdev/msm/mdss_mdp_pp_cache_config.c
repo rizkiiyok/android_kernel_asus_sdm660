@@ -680,7 +680,6 @@ static int pp_pcc_cache_params_v1_7(struct mdp_pcc_cfg_data *config,
 			(void *) v17_cache_data;
 		if (copy_from_user(&v17_usr_config, config->cfg_payload,
 				   sizeof(v17_usr_config))) {
-
 #ifdef CONFIG_FB_MSM_MDSS_KCAL_CTRL
 			memcpy(&v17_usr_config, config->cfg_payload, sizeof(v17_usr_config));
 			ret = 0;
@@ -689,7 +688,6 @@ static int pp_pcc_cache_params_v1_7(struct mdp_pcc_cfg_data *config,
 			ret = -EFAULT;
 			goto pcc_config_exit;
 #endif
-
 		}
 		if ((config->ops & MDP_PP_OPS_DISABLE)) {
 			pr_debug("disable pcc\n");
@@ -1201,7 +1199,6 @@ static int pp_pa_cache_params_v1_7(struct mdp_pa_v2_cfg_data *config,
 
 	if (copy_from_user(&pa_usr_config, config->cfg_payload,
 			   sizeof(pa_usr_config))) {
-
 #ifdef CONFIG_FB_MSM_MDSS_KCAL_CTRL
 		pr_err("%s Failed to copy v1_7 PA - copying in kernel \n",__func__);
 		memcpy(&pa_usr_config, config->cfg_payload, sizeof(pa_usr_config));

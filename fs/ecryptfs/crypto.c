@@ -347,10 +347,8 @@ static int crypt_scatterlist(struct ecryptfs_crypt_stat *crypt_stat,
 	struct extent_crypt_result ecr;
 	int rc = 0;
 
-	if (!crypt_stat || !crypt_stat->tfm
-	       || !(crypt_stat->flags & ECRYPTFS_STRUCT_INITIALIZED))
-		return -EINVAL;
-
+	BUG_ON(!crypt_stat || !crypt_stat->tfm
+	       || !(crypt_stat->flags & ECRYPTFS_STRUCT_INITIALIZED));
 	if (unlikely(ecryptfs_verbosity > 0)) {
 		ecryptfs_printk(KERN_DEBUG, "Key size [%zd]; key:\n",
 				ecryptfs_get_key_size_to_enc_data(crypt_stat));
@@ -1173,10 +1171,8 @@ int ecryptfs_read_and_validate_header_region(struct inode *inode)
 	lower_file->f_ra.ra_pages = ra_pages_org;
 	/* restore read a head mechanism */
 
-	if (rc < 0)
-		return rc;
-	else if (rc < ECRYPTFS_SIZE_AND_MARKER_BYTES)
-		return -EINVAL;
+	if (rc < ECRYPTFS_SIZE_AND_MARKER_BYTES)
+		return rc >= 0 ? -EINVAL : rc;
 	rc = ecryptfs_validate_marker(marker);
 	if (!rc)
 		ecryptfs_i_size_init(file_size, inode);
@@ -1534,10 +1530,8 @@ int ecryptfs_read_and_validate_xattr_region(struct dentry *dentry,
 	rc = ecryptfs_getxattr_lower(ecryptfs_dentry_to_lower(dentry),
 				     ECRYPTFS_XATTR_NAME, file_size,
 				     ECRYPTFS_SIZE_AND_MARKER_BYTES);
-	if (rc < 0)
-		return rc;
-	else if (rc < ECRYPTFS_SIZE_AND_MARKER_BYTES)
-		return -EINVAL;
+	if (rc < ECRYPTFS_SIZE_AND_MARKER_BYTES)
+		return rc >= 0 ? -EINVAL : rc;
 	rc = ecryptfs_validate_marker(marker);
 	if (!rc)
 		ecryptfs_i_size_init(file_size, inode);

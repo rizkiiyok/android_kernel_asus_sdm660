@@ -70,7 +70,7 @@
 		qcom,initial-pwrlevel = <6>;
 
 		/* <HZ/12> */
-		qcom,idle-timeout = <64>;
+		qcom,idle-timeout = <80>;
 
 		qcom,highest-bank-bit = <14>;
 
@@ -180,7 +180,7 @@
 
 				qcom,speed-bin = <0>;
 
-				qcom,initial-pwrlevel = <7>;
+				qcom,initial-pwrlevel = <6>;
 
 				/* TURBO */
 				qcom,gpu-pwrlevel@0 {
@@ -270,7 +270,7 @@
 
 				qcom,speed-bin = <157>;
 
-				qcom,initial-pwrlevel = <7>;
+				qcom,initial-pwrlevel = <6>;
 
 				/* TURBO */
 				qcom,gpu-pwrlevel@0 {
@@ -360,7 +360,7 @@
 
 				qcom,speed-bin = <146>;
 
-				qcom,initial-pwrlevel = <6>;
+				qcom,initial-pwrlevel = <5>;
 
 				/* TURBO */
 				qcom,gpu-pwrlevel@0 {
@@ -513,7 +513,7 @@
 
 				qcom,speed-bin = <78>;
 
-				qcom,initial-pwrlevel = <2>;
+				qcom,initial-pwrlevel = <1>;
 
 				/* SVS */
 				qcom,gpu-pwrlevel@0 {
@@ -558,7 +558,7 @@
 
 				qcom,speed-bin = <90>;
 
-				qcom,initial-pwrlevel = <3>;
+				qcom,initial-pwrlevel = <2>;
 
 				/* SVS_L1 */
 				qcom,gpu-pwrlevel@0 {
@@ -612,7 +612,7 @@
 
 				qcom,speed-bin = <122>;
 
-				qcom,initial-pwrlevel = <4>;
+				qcom,initial-pwrlevel = <3>;
 
 				/* NOM */
 				qcom,gpu-pwrlevel@0 {
