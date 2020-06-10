@@ -147,6 +147,7 @@ struct hdmi_edid_ctrl {
 	bool keep_resv_timings;
 	bool edid_override;
 	bool hdr_supported;
+	bool override_default_vic;
 
 	struct hdmi_edid_sink_data sink_data;
 	struct hdmi_edid_init_data init_data;
@@ -964,6 +965,17 @@ static void hdmi_edid_add_sink_y420_format(struct hdmi_edid_ctrl *edid_ctrl,
 		video_format, msm_hdmi_mode_2string(video_format),
 		supported ? "Supported" : "Not-Supported");
 
+	/* override the default resolution */
+	if (edid_ctrl->override_default_vic) {
+		if (!ret && supported) {
+			sink->disp_mode_list[0].video_format = video_format;
+			sink->disp_mode_list[0].y420_support = true;
+			sink->disp_mode_list[0].rgb_support = false;
+			edid_ctrl->override_default_vic = false;
+			return;
+		}
+	}
+
 	if (!ret && supported) {
 		sink->disp_mode_list[sink->num_of_elements].video_format
 			= video_format;
@@ -1651,7 +1663,9 @@ static void hdmi_edid_detail_desc(struct hdmi_edid_ctrl *edid_ctrl,
 		timing.pixel_freq    = pixel_clk;
 		timing.refresh_rate  = refresh_rate;
 		timing.interlaced    = interlaced;
-		timing.supported     = true;
+		if (!interlaced)
+			timing.supported     = true;
+
 		timing.ar            = aspect_ratio_4_3 ? HDMI_RES_AR_4_3 :
 					(aspect_ratio_5_4 ? HDMI_RES_AR_5_4 :
 					HDMI_RES_AR_16_9);
@@ -1729,6 +1743,16 @@ static void hdmi_edid_add_sink_video_format(struct hdmi_edid_ctrl *edid_ctrl,
 	DEV_DBG("%s: EDID: format: %d [%s], %s\n", __func__,
 		video_format, msm_hdmi_mode_2string(video_format),
 		supported ? "Supported" : "Not-Supported");
+
+	/* override the default resolution */
+	if (edid_ctrl->override_default_vic) {
+		if (!ret && supported) {
+			disp_mode_list[0].video_format = video_format;
+			disp_mode_list[0].rgb_support = true;
+			edid_ctrl->override_default_vic = false;
+			return;
+		}
+	}
 
 	for (i = 0; i < sink_data->num_of_elements; i++) {
 		u32 vic = disp_mode_list[i].video_format;
@@ -2290,6 +2314,7 @@ int hdmi_edid_parser(void *input)
 	u16 ieee_reg_id;
 	int status = 0;
 	u32 i = 0;
+	u32 cea_idx = 1;
 	struct hdmi_edid_ctrl *edid_ctrl = (struct hdmi_edid_ctrl *)input;
 
 	if (!edid_ctrl) {
@@ -2316,7 +2341,7 @@ int hdmi_edid_parser(void *input)
 
 	/* EDID_CEA_EXTENSION_FLAG[0x7E] - CEC extension byte */
 	num_of_cea_blocks = edid_buf[EDID_BLOCK_SIZE - 2];
-	DEV_DBG("%s: No. of CEA blocks is  [%u]\n", __func__,
+	DEV_DBG("%s: No. of CEA/Extended EDID blocks is  [%u]\n", __func__,
 		num_of_cea_blocks);
 
 	/* Find out any CEA extension blocks following block 0 */
@@ -2335,30 +2360,40 @@ int hdmi_edid_parser(void *input)
 		num_of_cea_blocks = MAX_EDID_BLOCKS - 1;
 	}
 
-	/* check for valid CEA block */
-	if (edid_buf[EDID_BLOCK_SIZE] != 2) {
-		DEV_ERR("%s: Invalid CEA block\n", __func__);
-		num_of_cea_blocks = 0;
-		goto bail;
+	if (edid_buf[EDID_BLOCK_SIZE] == 0xF0) {
+		DEV_DBG("%s: Extended EDID Block Map found\n", __func__);
+		edid_buf += EDID_BLOCK_SIZE;
+		cea_idx++;
 	}
 
-	/* goto to CEA extension edid block */
-	edid_buf += EDID_BLOCK_SIZE;
+	for (i = cea_idx; i <= num_of_cea_blocks; i++) {
 
-	ieee_reg_id = hdmi_edid_extract_ieee_reg_id(edid_ctrl, edid_buf);
-	DEV_DBG("%s: ieee_reg_id = 0x%08x\n", __func__, ieee_reg_id);
-	if (ieee_reg_id == EDID_IEEE_REG_ID)
-		edid_ctrl->sink_mode = SINK_MODE_HDMI;
-	else
-		edid_ctrl->sink_mode = SINK_MODE_DVI;
+		/* check for valid CEA block */
+		if (edid_buf[EDID_BLOCK_SIZE] != 2) {
+			DEV_ERR("%s: Not a CEA block\n", __func__);
+			edid_buf += EDID_BLOCK_SIZE;
+			continue;
+		}
 
-	hdmi_edid_extract_sink_caps(edid_ctrl, edid_buf);
-	hdmi_edid_extract_latency_fields(edid_ctrl, edid_buf);
-	hdmi_edid_extract_dc(edid_ctrl, edid_buf);
-	hdmi_edid_extract_speaker_allocation_data(edid_ctrl, edid_buf);
-	hdmi_edid_extract_audio_data_blocks(edid_ctrl, edid_buf);
-	hdmi_edid_extract_3d_present(edid_ctrl, edid_buf);
-	hdmi_edid_extract_extended_data_blocks(edid_ctrl, edid_buf);
+		/* goto to CEA extension edid block */
+		edid_buf += EDID_BLOCK_SIZE;
+
+		ieee_reg_id = hdmi_edid_extract_ieee_reg_id(edid_ctrl,
+				edid_buf);
+		DEV_DBG("%s: ieee_reg_id = 0x%08x\n", __func__, ieee_reg_id);
+		if (ieee_reg_id == EDID_IEEE_REG_ID)
+			edid_ctrl->sink_mode = SINK_MODE_HDMI;
+		else
+			edid_ctrl->sink_mode = SINK_MODE_DVI;
+
+		hdmi_edid_extract_sink_caps(edid_ctrl, edid_buf);
+		hdmi_edid_extract_latency_fields(edid_ctrl, edid_buf);
+		hdmi_edid_extract_dc(edid_ctrl, edid_buf);
+		hdmi_edid_extract_speaker_allocation_data(edid_ctrl, edid_buf);
+		hdmi_edid_extract_audio_data_blocks(edid_ctrl, edid_buf);
+		hdmi_edid_extract_3d_present(edid_ctrl, edid_buf);
+		hdmi_edid_extract_extended_data_blocks(edid_ctrl, edid_buf);
+	}
 
 bail:
 	for (i = 1; i <= num_of_cea_blocks; i++) {
@@ -2688,6 +2723,7 @@ void hdmi_edid_set_video_resolution(void *input, u32 resolution, bool reset)
 		edid_ctrl->sink_data.disp_mode_list[0].video_format =
 			resolution;
 		edid_ctrl->sink_data.disp_mode_list[0].rgb_support = true;
+		edid_ctrl->override_default_vic = true;
 	}
 } /* hdmi_edid_set_video_resolution */
 

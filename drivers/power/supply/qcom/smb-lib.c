@@ -2732,7 +2732,7 @@ int smblib_get_prop_die_health(struct smb_charger *chg,
 /* Huaqin add for ZQL1650-1287 factory version remove before BC1.2 500mA before adapter id 1000mA by fangaijun at 2018/5/8 start */
 #ifdef CONFIG_MACH_X01BD
 /* Huaqin add for ZQL1650-71 before BC1.2 500mA before adapter id 1000mA by fangaijun at 2018/4/4 start */
-#define DCP_CURRENT_UA			500000
+#define DCP_CURRENT_UA			2000000
 /* Huaqin add for ZQL1650-71 before BC1.2 500mA before adapter id 1000mA by fangaijun at 2018/4/4 end */
 #else
 #define DCP_CURRENT_UA			500000
@@ -4200,7 +4200,7 @@ void asus_chg_flow_work(struct work_struct *work)
 		break;
 	case OCP_CHARGER_BIT:
 		printk("asus_chg_flow_work entert OCP_CHARGER_BIT");
-			set_icl = ICL_3000mA;                                                                                                                                 //reg=1370 bit7-bit0
+			set_icl = ICL_2000mA;                                                                                                                                 //reg=1370 bit7-bit0
 		rc = smblib_masked_write(smbchg_dev, USBIN_CURRENT_LIMIT_CFG_REG,
 			USBIN_CURRENT_LIMIT_MASK, set_icl);
 		if (rc < 0)
@@ -4235,7 +4235,7 @@ void asus_chg_flow_work(struct work_struct *work)
 			printk("%s: Couldn't read fast_CURRENT_LIMIT_CFG_REG\n", __func__);
 		printk("asus_chg_flow_work dcp_USBIN_1_cc=0x%x\n",USBIN_1_cc);
 
-		set_icl = ICL_3000mA;                                                                                                                                 //reg=1370 bit7-bit0
+		set_icl = ICL_1000mA;                                                                                                                                 //reg=1370 bit7-bit0
 		rc = smblib_masked_write(smbchg_dev, USBIN_CURRENT_LIMIT_CFG_REG,
 			USBIN_CURRENT_LIMIT_MASK, set_icl);
 		if (rc < 0)
@@ -4370,19 +4370,19 @@ void asus_adapter_adc_work(struct work_struct *work)
 	//determine current-setting value for DCP type AC:
 	switch (ASUS_ADAPTER_ID) {
 	case ASUS_750K:
-			usb_max_current = ICL_3000mA;
+			usb_max_current = ICL_2000mA;
 		break;
 	case ASUS_200K:
-			usb_max_current = ICL_3000mA;
+			usb_max_current = ICL_2000mA;
 		break;
 	case PB:
-			usb_max_current = ICL_3000mA;
+			usb_max_current = ICL_2000mA;
 		break;
 	case OTHERS:
-			usb_max_current = ICL_3000mA;
+			usb_max_current = ICL_2000mA;
 		break;
 	case ADC_NOT_READY:
-		usb_max_current = ICL_3000mA;
+		usb_max_current = ICL_1000mA;
 		break;
 	}
 	rc = smblib_set_usb_suspend(smbchg_dev, 0);

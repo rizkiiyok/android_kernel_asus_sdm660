@@ -1544,7 +1544,7 @@ void free_task_load_ptrs(struct task_struct *p)
 	p->ravg.prev_window_cpu = NULL;
 }
 
-void init_new_task_load(struct task_struct *p, bool idle_task)
+void init_new_task_load(struct task_struct *p)
 {
 	int i;
 	u32 init_load_windows = sched_init_task_load_windows;
@@ -1570,9 +1570,6 @@ void init_new_task_load(struct task_struct *p, bool idle_task)
 
 	/* Don't have much choice. CPU frequency would be bogus */
 	BUG_ON(!p->ravg.curr_window_cpu || !p->ravg.prev_window_cpu);
-
-	if (idle_task)
-		return;
 
 	if (init_load_pct)
 		init_load_windows = div64_u64((u64)init_load_pct *
@@ -3651,6 +3648,11 @@ void fixup_busy_time(struct task_struct *p, int new_cpu)
 	}
 
 	migrate_top_tasks(p, src_rq, dest_rq);
+
+	if (!same_freq_domain(new_cpu, task_cpu(p))) {
+		cpufreq_update_util(dest_rq, SCHED_CPUFREQ_INTERCLUSTER_MIG);
+		cpufreq_update_util(src_rq, SCHED_CPUFREQ_INTERCLUSTER_MIG);
+	}
 
 	if (p == src_rq->ed_task) {
 		src_rq->ed_task = NULL;
