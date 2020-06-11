@@ -609,10 +609,6 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			av_dev_drift_afe_cb_handler(data->opcode, data->payload,
 						    data->payload_size);
 		} else {
-			if (rtac_make_afe_callback(data->payload,
-						   data->payload_size))
-				return 0;
-
 		/* Huaqin add for active nxp pa cal function by xudayi at 2018/03/03 start */
 		#ifdef CONFIG_SND_SOC_TFA9874
 		if (atomic_read(&this_afe.tfa_state) == 1) {

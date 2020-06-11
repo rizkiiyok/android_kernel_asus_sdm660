@@ -4398,4 +4398,3 @@ void msm_isp_axi_disable_all_wm(struct vfe_device *vfe_dev)
 				stream_info->wm[vfe_idx][j], 0);
 	}
 }
-
