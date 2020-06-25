@@ -11,6 +11,8 @@ menuconfig INPUT_TOUCHSCREEN
 
 if INPUT_TOUCHSCREEN
 
+source "drivers/input/touchscreen/synaptics_dsx/Kconfig"
+source "drivers/input/touchscreen/synaptics_dsx_2.7/Kconfig"
 
 config OF_TOUCHSCREEN
 	def_tristate INPUT
@@ -1223,7 +1225,9 @@ config TOUCHSCREEN_ST
 	  If unsure, say N.
 
 source "drivers/input/touchscreen/st/Kconfig"
-source "drivers/input/touchscreen/NVT_Touch/Kconfig"
+
+if MACH_ASUS_X01BD
+source "drivers/input/touchscreen/NVT_Touch_X01BD/Kconfig"
 source "drivers/input/touchscreen/synaptics_dsx_X01BD/Kconfig"
 source "drivers/input/touchscreen/focaltech_touch/Kconfig"
 
@@ -1237,5 +1241,10 @@ config TOUCHSCREEN_HIMAX_CHIPSET
 
           If unsure, say N.
 source "drivers/input/touchscreen/hxchipset/Kconfig"
+endif
+
+if MACH_ASUS_X00TD
+source "drivers/input/touchscreen/NVT_Touch/Kconfig"
+endif
 
 endif

@@ -169,24 +169,28 @@ void mdss_check_dsi_ctrl_status(struct work_struct *work, uint32_t interval)
 		mutex_unlock(&mdp5_data->ov_lock);
 
 	if ((pstatus_data->mfd->panel_power_state == MDSS_PANEL_POWER_ON)) {
-/* Huaqin duchangguo modify for disabling esd check when panel is not connect before boot start*/
 		if (ret > 0) {
+		#ifdef CONFIG_MACH_ASUS_X01BD
 			pstatus_data->is_first_check = 0;
+		#endif
 			schedule_delayed_work(&pstatus_data->check_status,
 				msecs_to_jiffies(interval));
 		}
+                #ifdef CONFIG_MACH_ASUS_X01BD
 		else if (ret == -ENOTSUPP && pstatus_data->is_first_check) {
 			pr_err("%s: DSI read fail, panel may not link, no more esd until next unblank\n", __func__);
 			pstatus_data->is_first_check = 0;
                         return;
 
 		}
+                #endif
 		else {
+                #ifdef CONFIG_MACH_ASUS_X01BD
 			pstatus_data->is_first_check = 0;
+		#endif
 			goto status_dead;
 		}
 	}
-/* Huaqin duchangguo modify for disabling esd check when panel is not connect before boot end*/
 
 	if (pdata->panel_info.panel_force_dead) {
 		pr_debug("force_dead=%d\n", pdata->panel_info.panel_force_dead);

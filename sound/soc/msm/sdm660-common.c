@@ -30,11 +30,9 @@
 #define DEV_NAME_STR_LEN  32
 #define DEFAULT_MCLK_RATE 9600000
 
-/* Huaqin add sar switcher by chenyijun5 at 2018/03/20 start*/
-#ifdef CONFIG_INPUT_SX9310
+#if defined(CONFIG_MACH_ASUS_SDM660) && defined(CONFIG_INPUT_SX9310)
 extern void sar_switch(bool);
 #endif
-/* Huaqin add sar switcher by chenyijun5 at 2018/03/20 end*/
 
 struct dev_config {
 	u32 sample_rate;
@@ -206,11 +204,15 @@ static struct wcd_mbhc_config mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 	.key_code[0] = KEY_MEDIA,
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	.key_code[1] = KEY_VOLUMEUP,
 	.key_code[2] = KEY_VOLUMEDOWN,
 	.key_code[3] = 0,
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#else
+	.key_code[1] = KEY_VOICECOMMAND,
+	.key_code[2] = KEY_VOLUMEUP,
+	.key_code[3] = KEY_VOLUMEDOWN,
+#endif
 	.key_code[4] = 0,
 	.key_code[5] = 0,
 	.key_code[6] = 0,
@@ -239,9 +241,11 @@ static struct dev_config mi2s_rx_cfg[] = {
 static struct dev_config mi2s_tx_cfg[] = {
 	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
+#else
+	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+#endif
 	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 };
 
@@ -2475,9 +2479,9 @@ int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	int index = cpu_dai->id;
 	unsigned int fmt = SND_SOC_DAIFMT_CBS_CFS;
 
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(rtd->card);
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
+#endif
 
 	dev_dbg(rtd->card->dev,
 		"%s: substream = %s  stream = %d, dai name %s, dai ID %d\n",
@@ -2530,19 +2534,16 @@ int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 			}
 		}
 
-		/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 		if (index == TERT_MI2S) {
-			/* Huaqin add sar switcher by chenyijun5 at 2018/03/20 start*/
-			#ifdef CONFIG_INPUT_SX9310
+#ifdef CONFIG_INPUT_SX9310
 			pr_debug("%s before open PA, close SAR!\n", __func__);
-			//sar_switch(0);
-			#endif
-			/* Huaqin add sar switcher by chenyijun5 at 2018/03/20 end*/
-		    msm_cdc_pinctrl_select_active_state(pdata->tert_mi2s_gpio_p);
-			printk("daixianze %s tert_mi2s_gpio_p\n", __func__);
+			sar_switch(0);
+#endif
+			msm_cdc_pinctrl_select_active_state(
+						pdata->tert_mi2s_gpio_p);
 		}
-		/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
-
+#endif
 	}
 	mutex_unlock(&mi2s_intf_conf[index].lock);
 	return 0;
@@ -2570,9 +2571,9 @@ void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 	int port_id = msm_get_port_id(rtd->dai_link->be_id);
 	int index = rtd->cpu_dai->id;
 
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
-    struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(rtd->card);
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
+#ifdef CONFIG_MACH_ASUS_SDM660
+	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(rtd->card);
+#endif
 
 	pr_debug("%s(): substream = %s  stream = %d\n", __func__,
 		 substream->name, substream->stream);
@@ -2583,20 +2584,16 @@ void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 
 	mutex_lock(&mi2s_intf_conf[index].lock);
 	if (--mi2s_intf_conf[index].ref_cnt == 0) {
-
-		/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
-        if (index == TERT_MI2S)
-		{
-		    msm_cdc_pinctrl_select_sleep_state(pdata->tert_mi2s_gpio_p);
-			pr_err("daixianze %s tert_mi2s_gpio_p \n", __func__);
-			/* Huaqin add sar switcher by chenyijun5 at 2018/03/20 start*/
-			#ifdef CONFIG_INPUT_SX9310
+#ifdef CONFIG_MACH_ASUS_SDM660
+		if (index == TERT_MI2S) {
+			msm_cdc_pinctrl_select_sleep_state(
+						pdata->tert_mi2s_gpio_p);
+#ifdef CONFIG_INPUT_SX9310
 			pr_debug("%s after close PA, open SAR!\n", __func__);
-			//sar_switch(1);
-			#endif
-			/* Huaqin add sar switcher by chenyijun5 at 2018/03/20 end*/
+			sar_switch(1);
+#endif
 		}
-		/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
+#endif
 
 		ret = msm_mi2s_set_sclk(substream, false);
 		if (ret < 0)
@@ -3083,22 +3080,13 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	pdata = devm_kzalloc(&pdev->dev,
 			     sizeof(struct msm_asoc_mach_data),
 			     GFP_KERNEL);
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-	dev_err(&pdev->dev,"test card fail reason start %d\n", __LINE__);
-	if (!pdata){
-		dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+	if (!pdata)
 		return -ENOMEM;
-	}
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 
 	match = of_match_node(sdm660_asoc_machine_of_match,
 			      pdev->dev.of_node);
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-	if (!match){
-		dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+	if (!match)
 		goto err;
-	}
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 
 	ret = of_property_read_u32(pdev->dev.of_node, mclk, &id);
 	if (ret) {
@@ -3115,32 +3103,20 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 		else
 			pdata->snd_card_val = EXT_SND_CARD_TAVIL;
 		ret = msm_ext_cdc_init(pdev, pdata, &card, &mbhc_cfg);
-		/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-		if (ret){
-			dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+		if (ret)
 			goto err;
-		}
-		/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 	} else if (!strcmp(match->data, "internal_codec")) {
 		pdata->snd_card_val = INT_SND_CARD;
 		ret = msm_int_cdc_init(pdev, pdata, &card, &mbhc_cfg);
-		/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-		if (ret){
-			dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+		if (ret)
 			goto err;
-		}
-		/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 	} else {
 		dev_err(&pdev->dev,
 			"%s: Not a matching DT sound node\n", __func__);
 		goto err;
 	}
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-	if (!card){
-		dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+	if (!card)
 		goto err;
-	}
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 
 	if (pdata->snd_card_val == INT_SND_CARD) {
 		/*reading the gpio configurations from dtsi file*/
@@ -3152,11 +3128,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 					"qcom,cdc-dmic-gpios", 0);
 		pdata->ext_spk_gpio_p = of_parse_phandle(pdev->dev.of_node,
 					"qcom,cdc-ext-spk-gpios", 0);
-
-		/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 		pdata->tert_mi2s_gpio_p = of_parse_phandle(pdev->dev.of_node,
-				    "qcom,tert-mi2s-gpios", 0);
-		/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
+					"qcom,tert-mi2s-gpios", 0);
+#endif
 	}
 
 	/*
@@ -3186,30 +3161,19 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	i2s_auxpcm_init(pdev);
 
 	ret = snd_soc_of_parse_audio_routing(card, "qcom,audio-routing");
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-	if (ret){
-		dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+	if (ret)
 		goto err;
-	}
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 
 	ret = msm_populate_dai_link_component_of_node(pdata, card);
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
 	if (ret) {
 		ret = -EPROBE_DEFER;
-		dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
 		goto err;
 	}
-	/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end */
 
 	if (!of_property_read_bool(pdev->dev.of_node, "qcom,wsa-disable")) {
 		ret = msm_init_wsa_dev(pdev, card);
-		/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 start */
-		if (ret){
-			dev_err(&pdev->dev,"test card fail reason %d\n", __LINE__);
+		if (ret)
 			goto err;
-		}
-		/* Huaqin add for test card register fail reason by xudayi at 2018/02/24 end*/
 	}
 
 	ret = devm_snd_soc_register_card(&pdev->dev, card);
@@ -3222,9 +3186,6 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 			 */
 			ret = -EINVAL;
 		}
-		/* Huaqin add for sure card register fail reason by xudayi at 2018/02/12 start */
-		dev_err(&pdev->dev, "snd_soc_register_card failed:(%d)\n",ret);
-		/* Huaqin add for sure card register fail reason by xudayi at 2018/02/12 end */
 		goto err;
 	} else if (ret) {
 		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n",

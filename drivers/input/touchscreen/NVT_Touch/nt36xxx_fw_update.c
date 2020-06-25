@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2010 - 2017 Novatek, Inc.
  *
- * $Revision: 20544 $
- * $Date: 2017-12-20 11:08:15 +0800 (周三, 20 十二月 2017) $
+ * $Revision: 12034 $
+ * $Date: 2017-05-04 17:49:58 +0800 (周四, 04 五月 2017) $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,13 +18,15 @@
 
 #include <linux/delay.h>
 #include <linux/firmware.h>
-#include <linux/wakelock.h>
+// Huaqin add for when fw error resolution  by zhengwu.lu. at 2018/03/27 For Platform start
+#include <linux/string.h>
+// Huaqin add for when fw error resolution  by zhengwu.lu. at 2018/03/27 For Platform end
 
 #include "nt36xxx.h"
-/* Huaqin add for nvt fw update fail by limengxia at 20181113 start */
-extern int tp_fw_update_flag;
-struct wake_lock tp_update_wakelock;
-/* Huaqin add for nvt fw update fail by limengxia at 20181113 end */
+
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  start
+#include "../../../../drivers/video/fbdev/msm/mdss_dsi.h"
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  end
 
 #if BOOT_UPDATE_FIRMWARE
 
@@ -836,9 +838,6 @@ int32_t Update_Firmware(void)
 {
 	int32_t ret = 0;
 
-	//---Stop CRC check to prevent IC auto reboot---
-	nvt_stop_crc_reboot();
-
 	// Step 1 : initial bootloader
 	ret = Init_BootLoader();
 	if (ret) {
@@ -876,19 +875,19 @@ int32_t Update_Firmware(void)
 	return ret;
 }
 
+// Huaqin add for when fw error resolution  by zhengwu.lu. at 2018/03/27 For Platform start
 /*******************************************************
 Description:
-	Novatek touchscreen check flash end flag function.
+	Novatek touchscreen read flash end flag function.
 
 return:
-	Executive outcomes. 0---succeed. 1,negative---failed.
+	Executive outcomes. 0---succeed. negative---failed.
 *******************************************************/
 #define NVT_FLASH_END_FLAG_LEN 3
-#define NVT_FLASH_END_FLAG_ADDR 0x1AFFD
-int32_t nvt_check_flash_end_flag(void)
+int32_t nvt_read_flash_end_flag(void)
 {
 	uint8_t buf[8] = {0};
-	uint8_t nvt_end_flag[NVT_FLASH_END_FLAG_LEN + 1] = {0};
+	uint8_t nvt_end_flag[NVT_FLASH_END_FLAG_LEN+1]={0};
 	int32_t ret = 0;
 
 	// Step 1 : initial bootloader
@@ -916,11 +915,11 @@ int32_t nvt_check_flash_end_flag(void)
 	//Step 4 : Flash Read Command
 	buf[0] = 0x00;
 	buf[1] = 0x03;
-	buf[2] = (NVT_FLASH_END_FLAG_ADDR >> 16) & 0xFF; //Addr_H
-	buf[3] = (NVT_FLASH_END_FLAG_ADDR >> 8) & 0xFF; //Addr_M
-	buf[4] = NVT_FLASH_END_FLAG_ADDR & 0xFF; //Addr_L
-	buf[5] = (NVT_FLASH_END_FLAG_LEN >> 8) & 0xFF; //Len_H
-	buf[6] = NVT_FLASH_END_FLAG_LEN & 0xFF; //Len_L
+	buf[2] = 0x01;	//Addr_H
+	buf[3] = 0xAF;	//Addr_M
+	buf[4] = 0xFD;	//Addr_L
+	buf[5] = 0x00;	//Len_H
+	buf[6] = 0x03;	//Len_L
 	ret = CTP_I2C_WRITE(ts->client, I2C_HW_Address, buf, 7);
 	if (ret < 0) {
 		NVT_ERR("write Read Command error!!(%d)\n", ret);
@@ -945,8 +944,8 @@ int32_t nvt_check_flash_end_flag(void)
 
 	//Step 5 : Read Flash Data
 	buf[0] = 0xFF;
-	buf[1] = (ts->mmap->READ_FLASH_CHECKSUM_ADDR >> 16) & 0xFF;
-	buf[2] = (ts->mmap->READ_FLASH_CHECKSUM_ADDR >> 8) & 0xFF;
+	buf[1] = 0x01;
+	buf[2] = 0x40;
 	ret = CTP_I2C_WRITE(ts->client, I2C_BLDR_Address, buf, 3);
 	if (ret < 0) {
 		NVT_ERR("change index error!! (%d)\n", ret);
@@ -955,7 +954,7 @@ int32_t nvt_check_flash_end_flag(void)
 	msleep(10);
 
 	// Read Back
-	buf[0] = ts->mmap->READ_FLASH_CHECKSUM_ADDR & 0xFF;
+	buf[0] = 0x00;
 	ret = CTP_I2C_READ(ts->client, I2C_BLDR_Address, buf, 6);
 	if (ret < 0) {
 		NVT_ERR("Read Back error!! (%d)\n", ret);
@@ -966,14 +965,12 @@ int32_t nvt_check_flash_end_flag(void)
 	strncpy(nvt_end_flag, &buf[3], NVT_FLASH_END_FLAG_LEN);
 	NVT_LOG("nvt_end_flag=%s (%02X %02X %02X)\n", nvt_end_flag, buf[3], buf[4], buf[5]);
 
-	if (strncmp(nvt_end_flag, "NVT", 3) == 0) {
+	if (strncmp(nvt_end_flag, "NVT", 3) == 0)
 		return 0;
-	} else {
-		NVT_ERR("\"NVT\" end flag not found!\n");
-		return 1;
-	}
+	else
+		return -1;
 }
-
+// Huaqin add for when fw error resolution  by zhengwu.lu. at 2018/03/27 For Platform end
 /*******************************************************
 Description:
 	Novatek touchscreen update firmware when booting
@@ -987,26 +984,32 @@ void Boot_Update_Firmware(struct work_struct *work)
 	int32_t ret = 0;
 
 	char firmware_name[256] = "";
-	sprintf(firmware_name, BOOT_UPDATE_FIRMWARE_NAME);
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  start
+	NVT_LOG("zhengwu nvt_tp_check=%d\n",nvt_tp_check);
+	if(nvt_tp_check == 0){
+	sprintf(firmware_name, DJ_BOOT_UPDATE_FIRMWARE_NAME);
+	NVT_LOG("it's dj tp\n");
+	}
+	else if (nvt_tp_check == 1){
+	sprintf(firmware_name, TXD_BOOT_UPDATE_FIRMWARE_NAME);
+	NVT_LOG("it's txd tp\n");
+	}
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  end
 
 	// request bin file in "/etc/firmware"
+	//sprintf(firmware_name, BOOT_UPDATE_FIRMWARE_NAME);
 	ret = update_firmware_request(firmware_name);
 	if (ret) {
 		NVT_ERR("update_firmware_request failed. (%d)\n", ret);
 		return;
 	}
-	/* Huaqin add for nvt fw update fail by limengxia at 20181113 start */
-	wake_lock_init(&tp_update_wakelock, WAKE_LOCK_SUSPEND, "tp-update");
-	/* Huaqin add for nvt fw update fail by limengxia at 20181113 end */
-	mutex_lock(&ts->lock);
-	/* Huaqin add for nvt fw update fail by limengxia at 20181113 start */
-	wake_lock(&tp_update_wakelock);
-	tp_fw_update_flag = 1;
-	/* Huaqin add for nvt fw update fail by limengxia at 20181113 end */
 
+	mutex_lock(&ts->lock);
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
+		nvt_esd_check_enable(false);
+#endif
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
 
 	nvt_sw_reset_idle();
 
@@ -1018,10 +1021,15 @@ void Boot_Update_Firmware(struct work_struct *work)
 	} else if ((ret == 0) && (Check_FW_Ver() == 0)) {	// (fw checksum not match) && (bin fw version >= ic fw version)
 		NVT_LOG("firmware version not match\n");
 		Update_Firmware();
-	} else if (nvt_check_flash_end_flag()) {
-		NVT_LOG("check flash end flag failed\n");
-		Update_Firmware();
 	} else {
+// Huaqin add for when fw error resolution  by zhengwu.lu. at 2018/03/27 For Platform start
+		// Read NVT flag
+		ret = nvt_read_flash_end_flag();
+		if (ret) {
+			NVT_LOG("read flash end flag failed\n");
+			Update_Firmware();
+		}
+
 		// Bootloader Reset
 		nvt_bootloader_reset();
 		ret = nvt_check_fw_reset_state(RESET_STATE_INIT);
@@ -1029,11 +1037,9 @@ void Boot_Update_Firmware(struct work_struct *work)
 			NVT_LOG("check fw reset state failed\n");
 			Update_Firmware();
 		}
+// Huaqin add for when fw error resolution  by zhengwu.lu. at 2018/03/27 For Platform end
 	}
-	/* Huaqin add for nvt fw update fail by limengxia at 20181113 start */
-	tp_fw_update_flag = 0;
-	wake_unlock(&tp_update_wakelock);
-	/* Huaqin add for nvt fw update fail by limengxia at 20181113 end */
+
 	mutex_unlock(&ts->lock);
 
 	update_firmware_release();

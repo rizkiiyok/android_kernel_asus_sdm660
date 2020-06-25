@@ -1,8 +1,14 @@
-/** Filename: Tfa98xx_TfaFieldnames.h
- *  This file was generated automatically on 09/01/15 at 09:40:28. 
- *  Source file: TFA9888_N1C_I2C_regmap_V1.xlsx
+/*
+ * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
  */
+ 
 #define TFA9888_I2CVERSION 18
+
 typedef enum nxpTfa2BfEnumList {
     TFA2_BF_PWDN  = 0x0000,    /*!< Powerdown selection                                */
     TFA2_BF_I2CR  = 0x0010,    /*!< I2C Reset - Auto clear                             */
@@ -790,6 +796,7 @@ typedef enum nxpTfa2BfEnumList {
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
+#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA2_BITNAMETABLE static tfaBfName_t Tfa2BitNames[]= {\
    { 0x0, "powerdown"},    /* Powerdown selection                               , */\
    { 0x10, "reset"},    /* I2C Reset - Auto clear                            , */\
@@ -1440,6 +1447,7 @@ typedef enum nxpTfa2BfEnumList {
    { 0xff05, "calibr_osc_delta_ndiv"},    /* Calibration data for OSC1M, signed number representation, */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
+#endif /* CONFIG_MACH_ASUS_X00TD */
 
 enum tfa2_irq {
 	tfa2_irq_stvdds = 0,

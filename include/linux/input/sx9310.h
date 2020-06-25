@@ -161,12 +161,12 @@ static struct smtc_reg_data sx9310_i2c_reg_setup[] = {
                 .reg = SX9310_CPS_CTRL7_REG,
                 .val = 0x4C,
                 },
-		/*Huaqin modify sarsensor reg by zhuqiang at 2018/08/29 start*/
+		/*Huaqin modify sarsensor reg by chenyijun5 at 2018/03/12 start*/
                 {
                 .reg = SX9310_CPS_CTRL8_REG,
-                .val = 0x60,
+                .val = 0x80,
                 },
-		/*Huaqin modify sarsensor reg by zhuqiang at 2018/08/29 end*/
+		/*Huaqin modify sarsensor reg by chenyijun5 at 2018/03/12 end*/
                 {
                 .reg = SX9310_CPS_CTRL9_REG,
                 .val = 0xAE,

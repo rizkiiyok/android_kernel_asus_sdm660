@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2010 - 2017 Novatek, Inc.
  *
- * $Revision: 22429 $
- * $Date: 2018-01-30 19:42:59 +0800 (周二, 30 一月 2018) $
+ * $Revision: 15498 $
+ * $Date: 2017-08-16 10:47:15 +0800 (周三, 16 八月 2017) $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,36 +17,36 @@
  */
 #ifndef 	_LINUX_NVT_TOUCH_H
 #define		_LINUX_NVT_TOUCH_H
-/* Huaqin add by zhangxiude for ITO test start */
+
+/* Huaqin add by yuexinghan for ITO test start */
 #include <linux/platform_device.h>
 #include <linux/device.h>
-#include <linux/regulator/consumer.h>
-#include <linux/debugfs.h>
-/* Huaqin add by zhangxiude for ITO test end */
+/* Huaqin add by yuexinghan for ITO test end */
 
 #include <linux/i2c.h>
 #include <linux/input.h>
+/* Huaqin add by yuexinghan for ITO test start */
+#include <linux/regulator/consumer.h>
+#include <linux/debugfs.h>
+/* Huaqin add by yuexinghan for ITO test end */
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
 
-#include "nt36xxx_mem_map.h"
-
 #define NVT_DEBUG 1
 
 //---GPIO number---
-#define NVTTOUCH_RST_PIN 980
 #define NVTTOUCH_INT_PIN 943
-//Huaqin add for VSN/VSP by xudongfang at 2018/9/5 start
+// Huaqin add for vsp/vsn. by zhengwu.lu. at 2018/03/07  start
 #define NVT_POWER_SOURCE_CUST_EN  1
-//VSN,VSP
+
 #if NVT_POWER_SOURCE_CUST_EN
 #define LCM_LAB_MIN_UV                      6000000
 #define LCM_LAB_MAX_UV                      6000000
 #define LCM_IBB_MIN_UV                      6000000
 #define LCM_IBB_MAX_UV                      6000000
 #endif
-//Huaqin add for VSN/VSP by xudongfang at 2018/9/5 end
+// Huaqin add for vsp/vsn. by zhengwu.lu. at 2018/03/07  end
 
 //---INT trigger mode---
 //#define IRQ_TYPE_EDGE_RISING 1
@@ -70,26 +70,19 @@
 //---Input device info.---
 #define NVT_TS_NAME "NVTCapacitiveTouchScreen"
 
-/* Huaqin add by zhangxiude for ITO test start */
+/* Huaqin add by yuexinghan for ITO test start */
 #define HWINFO_NAME		"tp_wake_switch"
 //-------------add ito test
 extern int32_t ito_selftest_open(void);
-/* Huaqin add by zhangxiude for ITO test end */
+/* Huaqin add by yuexinghan for ITO test end */
 
 //---Touch info.---
-#define TOUCH_DEFAULT_MAX_WIDTH 1080
-#define TOUCH_DEFAULT_MAX_HEIGHT 2280
 #define TOUCH_MAX_FINGER_NUM 10
 #define TOUCH_KEY_NUM 0
 #if TOUCH_KEY_NUM > 0
 extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 #endif
 #define TOUCH_FORCE_NUM 1000
-
-/* Enable only when module have tp reset pin and connected to host */
-/* Huaqin add for ZQL1820-796 by zhangxiude at 2018/9/30 start */
-#define NVT_TOUCH_SUPPORT_HW_RST 0
-/* Huaqin add for ZQL1820-796 by zhangxiude at 2018/9/30 end */
 
 //---Customerized func.---
 #define NVT_TOUCH_PROC 1
@@ -100,16 +93,45 @@ extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 #if WAKEUP_GESTURE
 extern const uint16_t gesture_key_array[];
 #endif
-#define BOOT_UPDATE_FIRMWARE 1
-//huaqin modify for update firmware by limengxia at 20190116 start
-#define BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw_v8D.bin"
-//huaqin modify for update firmware by limengxia at 20190116 end
-//---ESD Protect.---
-/* Huaqin add ZQL1820-663 by zhangxiude for ESD  function on start */
-#define NVT_TOUCH_ESD_PROTECT 1
-/* Huaqin add ZQL1820-663 by zhangxiude for ESD  function on end */
-#define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
 
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at  2018/03/01  start
+#define BOOT_UPDATE_FIRMWARE 1
+#define DJ_BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw_dj.bin"
+#define TXD_BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw_txd.bin"
+//#define BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw.bin"
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at  2018/03/01  end
+
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start
+//---ESD Protect.---
+#define NVT_TOUCH_ESD_PROTECT 1
+#define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
+
+struct nvt_ts_mem_map {
+	uint32_t EVENT_BUF_ADDR;
+	uint32_t RAW_PIPE0_ADDR;
+	uint32_t RAW_PIPE0_Q_ADDR;
+	uint32_t RAW_PIPE1_ADDR;
+	uint32_t RAW_PIPE1_Q_ADDR;
+	uint32_t BASELINE_ADDR;
+	uint32_t BASELINE_Q_ADDR;
+	uint32_t BASELINE_BTN_ADDR;
+	uint32_t BASELINE_BTN_Q_ADDR;
+	uint32_t DIFF_PIPE0_ADDR;
+	uint32_t DIFF_PIPE0_Q_ADDR;
+	uint32_t DIFF_PIPE1_ADDR;
+	uint32_t DIFF_PIPE1_Q_ADDR;
+	uint32_t RAW_BTN_PIPE0_ADDR;
+	uint32_t RAW_BTN_PIPE0_Q_ADDR;
+	uint32_t RAW_BTN_PIPE1_ADDR;
+	uint32_t RAW_BTN_PIPE1_Q_ADDR;
+	uint32_t DIFF_BTN_PIPE0_ADDR;
+	uint32_t DIFF_BTN_PIPE0_Q_ADDR;
+	uint32_t DIFF_BTN_PIPE1_ADDR;
+	uint32_t DIFF_BTN_PIPE1_Q_ADDR;
+	uint32_t READ_FLASH_CHECKSUM_ADDR;
+	uint32_t RW_FLASH_DATA_ADDR;
+};
 
 struct nvt_ts_data {
 	struct i2c_client *client;
@@ -139,14 +161,14 @@ struct nvt_ts_data {
 	const struct nvt_ts_mem_map *mmap;
 	uint8_t carrier_system;
 	uint16_t nvt_pid;
-//Huaqin add for VSN/VSP by xudongfang at 2018/9/5 start
+// Huaqin add for vsp/vsn. by zhengwu.lu. at 2018/03/07  start
 #if NVT_POWER_SOURCE_CUST_EN
 	struct regulator *lcm_lab;
 	struct regulator *lcm_ibb;
 	atomic_t lcm_lab_power;
 	atomic_t lcm_ibb_power;
 #endif
-//Huaqin for VSN/VSP by xudongfang at 2018/9/5 end
+// Huaqin add for vsp/vsn. by zhengwu.lu. at 2018/03/07  end
 };
 
 #if NVT_TOUCH_PROC
@@ -174,9 +196,9 @@ typedef enum {
 
 //---extern structures---
 extern struct nvt_ts_data *ts;
-/* Huaqin add by zhangxiude for ITO test start */
+/* Huaqin add by yuexinghan for ITO test start */
 extern int nvt_TestResultLen;
-/* Huaqin add by zhangxiude for ITO test end */
+/* Huaqin add by yuexinghan for ITO test end */
 
 //---extern functions---
 extern int32_t CTP_I2C_READ(struct i2c_client *client, uint16_t address, uint8_t *buf, uint16_t len);
@@ -187,9 +209,11 @@ extern int32_t nvt_check_fw_reset_state(RST_COMPLETE_STATE check_reset_state);
 extern int32_t nvt_get_fw_info(void);
 extern int32_t nvt_clear_fw_status(void);
 extern int32_t nvt_check_fw_status(void);
+
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start
 #if NVT_TOUCH_ESD_PROTECT
 extern void nvt_esd_check_enable(uint8_t enable);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
-extern void nvt_stop_crc_reboot(void);
+#endif
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
 
 #endif /* _LINUX_NVT_TOUCH_H */

@@ -1,8 +1,14 @@
-/** Filename: Tfa9890_TfaFieldnames.h
- *  This file was generated automatically on 04/07/15 at 14:46:37. 
- *  Source file: TFA9897N1B_I2C_list_URT_source_v34_90Only.xls
+/*
+ * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
  */
+
 #define TFA9890_I2CVERSION    34
+
 #define TFA9890_NAMETABLE static tfaBfName_t Tfa9890DatasheetNames[]= {\
    { 0x402, "I2SF"},    /* I2SFormat data 1 input:                           , */\
    { 0x431, "CHS12"},    /* ChannelSelection data1 input  (In CoolFlux)       , */\
@@ -36,6 +42,7 @@
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
+#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA9890_BITNAMETABLE static tfaBfName_t Tfa9890BitNames[]= {\
    { 0x402, "i2s_seti"},    /* I2SFormat data 1 input:                           , */\
    { 0x431, "chan_sel1"},    /* ChannelSelection data1 input  (In CoolFlux)       , */\
@@ -73,4 +80,4 @@
    { 0x8f0f, "production_data6"},    /* (key1 protected)                                  , */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
-
+#endif /* CONFIG_MACH_ASUS_X00TD */

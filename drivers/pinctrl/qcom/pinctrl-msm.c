@@ -71,9 +71,9 @@ struct msm_pinctrl {
 	void __iomem *regs;
 };
 
-/* Huaqin modify for TT1244651 by puqirui at 2018/10/11 satrt */
+#ifdef CONFIG_MACH_ASUS_X01BD
 int g_resume_from_fp = 0;
-/* Huaqin modify for TT1244651 by puqirui at 2018/10/11 end */
+#endif
 
 static struct msm_pinctrl *msm_pinctrl_data;
 
@@ -866,7 +866,7 @@ static int msm_gpio_init(struct msm_pinctrl *pctrl)
 	ret = gpiochip_irqchip_add(chip,
 				   &msm_gpio_irq_chip,
 				   0,
-				   handle_fasteoi_irq,
+				   handle_edge_irq,
 				   IRQ_TYPE_NONE);
 	if (ret) {
 		dev_err(pctrl->dev, "Failed to add irqchip to gpiochip\n");
@@ -936,9 +936,9 @@ static void msm_pinctrl_resume(void)
 		return;
 
 	spin_lock_irqsave(&pctrl->lock, flags);
-/* Huaqin modify for TT1244651 by puqirui at 2018/10/11 satrt */
-	g_resume_from_fp = 0;
-/* Huaqin modify for TT1244651 by puqirui at 2018/10/11 end */
+#ifdef CONFIG_MACH_ASUS_X01BD
+       g_resume_from_fp = 0;
+#endif
 	for_each_set_bit(i, pctrl->enabled_irqs, pctrl->chip.ngpio) {
 		g = &pctrl->soc->groups[i];
 		val = readl_relaxed(pctrl->regs + g->intr_status_reg);
@@ -951,12 +951,12 @@ static void msm_pinctrl_resume(void)
 				name = desc->action->name;
 
 			pr_warn("%s: %d triggered %s\n", __func__, irq, name);
-/* Huaqin modify for TT1244651 by puqirui at 2018/10/11 satrt */
+#ifdef CONFIG_MACH_ASUS_X01BD
 			if (irq == 265) {
 				pr_info("%s: fingerprint triggered resume.\n", __func__);
 				g_resume_from_fp = 1;
 			}
-/* Huaqin modify for TT1244651 by puqirui at 2018/10/11 end */
+#endif
 		}
 	}
 	spin_unlock_irqrestore(&pctrl->lock, flags);

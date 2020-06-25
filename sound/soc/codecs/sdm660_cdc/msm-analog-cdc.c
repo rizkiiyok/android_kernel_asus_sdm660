@@ -352,7 +352,7 @@ void msm_anlg_cdc_spk_ext_pa_cb(
 	sdm660_cdc->codec_spk_ext_pa_cb = codec_spk_ext_pa;
 }
 
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 void msm_anlg_cdc_hph_ext_sw_cb(
 		int (*codec_hph_ext_sw)(struct snd_soc_codec *codec,
 			int enable), struct snd_soc_codec *codec)
@@ -365,11 +365,9 @@ void msm_anlg_cdc_hph_ext_sw_cb(
 	}
 
 	sdm660_cdc = snd_soc_codec_get_drvdata(codec);
-
-	dev_dbg(codec->dev, "%s: Enter\n", __func__);
-	sdm660_cdc->codec_hph_ext_sw_cb= codec_hph_ext_sw;
+	sdm660_cdc->codec_hph_ext_sw_cb = codec_hph_ext_sw;
 }
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 
 static void msm_anlg_cdc_compute_impedance(struct snd_soc_codec *codec, s16 l,
 					   s16 r, uint32_t *zl, uint32_t *zr,
@@ -1650,11 +1648,11 @@ static int msm_anlg_cdc_pa_gain_get(struct snd_kcontrol *kcontrol,
 		if (ear_pa_gain == 0x00) {
 			ucontrol->value.integer.value[0] = 3;
 		} else if (ear_pa_gain == 0x01) {
-			ucontrol->value.integer.value[0] = 2;
+			ucontrol->value.integer.value[1] = 2;
 		} else if (ear_pa_gain == 0x02) {
-			ucontrol->value.integer.value[0] = 1;
+			ucontrol->value.integer.value[2] = 1;
 		} else if (ear_pa_gain == 0x03) {
-			ucontrol->value.integer.value[0] = 0;
+			ucontrol->value.integer.value[3] = 0;
 		} else {
 			dev_err(codec->dev,
 				"%s: ERROR: Unsupported Ear Gain = 0x%x\n",
@@ -1676,6 +1674,7 @@ static int msm_anlg_cdc_pa_gain_get(struct snd_kcontrol *kcontrol,
 			return -EINVAL;
 		}
 	}
+	ucontrol->value.integer.value[0] = ear_pa_gain;
 	dev_dbg(codec->dev, "%s: ear_pa_gain = 0x%x\n", __func__, ear_pa_gain);
 	return 0;
 }
@@ -2092,11 +2091,11 @@ static const char * const wsa_spk_text[] = {
 	"ZERO", "WSA"
 };
 
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 static const char * const ext_hph_text[] = {
 	"Off", "On"
 };
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 
 static const struct soc_enum adc2_enum =
 	SOC_ENUM_SINGLE(SND_SOC_NOPM, 0,
@@ -2110,19 +2109,20 @@ static const struct soc_enum wsa_spk_enum =
 	SOC_ENUM_SINGLE(SND_SOC_NOPM, 0,
 		ARRAY_SIZE(wsa_spk_text), wsa_spk_text);
 
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 static const struct soc_enum ext_hph_enum =
 	SOC_ENUM_SINGLE(SND_SOC_NOPM, 0,
 		ARRAY_SIZE(ext_hph_text), ext_hph_text);
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 
 static const struct snd_kcontrol_new ext_spk_mux =
 	SOC_DAPM_ENUM("Ext Spk Switch Mux", ext_spk_enum);
 
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+
+#ifdef CONFIG_MACH_ASUS_SDM660
 static const struct snd_kcontrol_new ext_hph_mux =
 	SOC_DAPM_ENUM("Ext Hph Switch Mux", ext_hph_enum);
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 
 static const struct snd_kcontrol_new tx_adc2_mux =
 	SOC_DAPM_ENUM("ADC2 MUX Mux", adc2_enum);
@@ -3105,11 +3105,11 @@ static const struct snd_soc_dapm_route audio_map[] = {
 	{"HEADPHONE", NULL, "HPHL PA"},
 	{"HEADPHONE", NULL, "HPHR PA"},
 
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	{"Ext Hph", NULL, "Ext Hph Switch"},
 	{"Ext Hph Switch", "On", "HPHL PA"},
 	{"Ext Hph Switch", "On", "HPHR PA"},
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 
 	{"Ext Spk", NULL, "Ext Spk Switch"},
 	{"Ext Spk Switch", "On", "HPHL PA"},
@@ -3368,7 +3368,7 @@ static int msm_anlg_cdc_codec_enable_spk_ext_pa(struct snd_soc_dapm_widget *w,
 	return 0;
 }
 
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 static int msm_anlg_cdc_codec_enable_hph_ext_sw(struct snd_soc_dapm_widget *w,
 						struct snd_kcontrol *kcontrol,
 						int event)
@@ -3377,7 +3377,6 @@ static int msm_anlg_cdc_codec_enable_hph_ext_sw(struct snd_soc_dapm_widget *w,
 	struct sdm660_cdc_priv *sdm660_cdc =
 					snd_soc_codec_get_drvdata(codec);
 
-	dev_dbg(codec->dev, "%s: %s event = %d\n", __func__, w->name, event);
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
 		dev_dbg(codec->dev,
@@ -3385,6 +3384,7 @@ static int msm_anlg_cdc_codec_enable_hph_ext_sw(struct snd_soc_dapm_widget *w,
 		if (sdm660_cdc->codec_hph_ext_sw_cb)
 			sdm660_cdc->codec_hph_ext_sw_cb(codec, 1);
 		break;
+
 	case SND_SOC_DAPM_PRE_PMD:
 		dev_dbg(codec->dev,
 			"%s: disable external headphone switch\n", __func__);
@@ -3392,9 +3392,10 @@ static int msm_anlg_cdc_codec_enable_hph_ext_sw(struct snd_soc_dapm_widget *w,
 			sdm660_cdc->codec_hph_ext_sw_cb(codec, 0);
 		break;
 	}
+
 	return 0;
 }
-/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif /* CONFIG_MACH_ASUS_X00TD */
 
 static int msm_anlg_cdc_codec_enable_ear_pa(struct snd_soc_dapm_widget *w,
 					    struct snd_kcontrol *kcontrol,
@@ -3501,9 +3502,9 @@ static const struct snd_soc_dapm_widget msm_anlg_cdc_dapm_widgets[] = {
 	SND_SOC_DAPM_MUX("RDAC2 MUX", SND_SOC_NOPM, 0, 0, &rdac2_mux),
 	SND_SOC_DAPM_MUX("WSA Spk Switch", SND_SOC_NOPM, 0, 0, wsa_spk_mux),
 	SND_SOC_DAPM_MUX("Ext Spk Switch", SND_SOC_NOPM, 0, 0, &ext_spk_mux),
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	SND_SOC_DAPM_MUX("Ext Hph Switch", SND_SOC_NOPM, 0, 0, &ext_hph_mux),
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 	SND_SOC_DAPM_MUX("LINE_OUT", SND_SOC_NOPM, 0, 0, lo_mux),
 	SND_SOC_DAPM_MUX("ADC2 MUX", SND_SOC_NOPM, 0, 0, &tx_adc2_mux),
 
@@ -3528,9 +3529,9 @@ static const struct snd_soc_dapm_widget msm_anlg_cdc_dapm_widgets[] = {
 		SND_SOC_DAPM_POST_PMD),
 
 	SND_SOC_DAPM_SPK("Ext Spk", msm_anlg_cdc_codec_enable_spk_ext_pa),
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	SND_SOC_DAPM_HP("Ext Hph", msm_anlg_cdc_codec_enable_hph_ext_sw),
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 
 	SND_SOC_DAPM_SWITCH("ADC1_INP1", SND_SOC_NOPM, 0, 0,
 			    &adc1_switch),

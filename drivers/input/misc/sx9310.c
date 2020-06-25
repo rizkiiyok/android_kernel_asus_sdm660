@@ -52,9 +52,7 @@ MODULE_PARM_DESC(sar_switcher, "Control sarsensor open or close.");
 #define SX9310_ID_ERROR 	1
 #define SX9310_I2C_ERROR	2
 #define SX9310_WHOAMI_REG       0x42
-/* Huaqin modify chip id by zhuqiang at 2018/08/02 start */
-#define SX9311_WHOAMI_VALUE     0x2
-/* Huaqin modify chip id by zhuqiang at 2018/08/02 end */
+#define SX9310_WHOAMI_VALUE     0x1
 static bool err_flag = 0;
 /* Huaqin add for check hw by zhuqiang at 2018/06/22 end */
 
@@ -1215,11 +1213,10 @@ static int sx9310_Hardware_Check(psx93XX_t this)
 	if(ret < 0){
 		failStatusCode = SX9310_I2C_ERROR;
 	}
-    /* Huaqin modify chip id by zhuqiang at 2018/08/02 start */
-	if(failcode!= SX9311_WHOAMI_VALUE){
+
+	if(failcode!= SX9310_WHOAMI_VALUE){
 		failStatusCode = SX9310_ID_ERROR;
 	}
-	/* Huaqin modify chip id by zhuqiang at 2018/08/02 end */
 
 	dev_info(this->pdev, "sx9310 failcode = 0x%x\n",failStatusCode);
 	return failStatusCode;

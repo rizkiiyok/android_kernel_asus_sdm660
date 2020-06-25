@@ -1607,6 +1607,15 @@ static int wma_unified_radio_tx_power_level_stats_event_handler(void *handle,
 							 fixed_param->radio_id;
 	tx_power_level_values = (uint8_t *) param_tlvs->tx_time_per_power_level;
 
+	if (rs_results->total_num_tx_power_levels &&
+	    fixed_param->total_num_tx_power_levels >
+		rs_results->total_num_tx_power_levels) {
+		WMA_LOGE("%s: excess tx_power buffers:%d, total_num_tx_power_levels:%d",
+			 __func__, fixed_param->total_num_tx_power_levels,
+			 rs_results->total_num_tx_power_levels);
+		return -EINVAL;
+	}
+
 	rs_results->total_num_tx_power_levels =
 				fixed_param->total_num_tx_power_levels;
 	if (!rs_results->total_num_tx_power_levels) {
@@ -3261,6 +3270,20 @@ int wma_stats_event_handler(void *handle, uint8_t *cmd_param_info,
 	event = param_buf->fixed_param;
 	temp = (uint8_t *) param_buf->data;
 
+	buf_len = event->num_pdev_stats * sizeof(wmi_pdev_stats) +
+		event->num_vdev_stats * sizeof(wmi_vdev_stats) +
+		event->num_peer_stats * sizeof(wmi_peer_stats) +
+		event->num_bcnflt_stats * sizeof(wmi_bcnfilter_stats_t) +
+		event->num_chan_stats * sizeof(wmi_chan_stats) +
+		event->num_mib_stats * sizeof(wmi_mib_stats) +
+		event->num_bcn_stats * sizeof(wmi_bcn_stats) +
+		event->num_peer_extd_stats * sizeof(wmi_peer_extd_stats);
+
+	if (buf_len != param_buf->num_data) {
+		WMA_LOGE("Invalid Buffer len %d received, Expected %d",
+			 buf_len, param_buf->num_data);
+		return -EINVAL;
+	}
 
 	do {
 		if (event->num_pdev_stats > ((WMI_SVC_MSG_MAX_SIZE -
@@ -3635,7 +3658,8 @@ QDF_STATUS wma_send_link_speed(uint32_t link_speed)
 {
 	QDF_STATUS qdf_status = QDF_STATUS_SUCCESS;
 	tpAniSirGlobal mac_ctx;
-	tSirLinkSpeedInfo *ls_ind;
+	tSirLinkSpeedInfo *ls_ind =
+		(tSirLinkSpeedInfo *) qdf_mem_malloc(sizeof(tSirLinkSpeedInfo));
 
 	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
 	if (!mac_ctx) {
@@ -3643,20 +3667,18 @@ QDF_STATUS wma_send_link_speed(uint32_t link_speed)
 		return QDF_STATUS_E_INVAL;
 	}
 
-	ls_ind = (tSirLinkSpeedInfo *)qdf_mem_malloc(sizeof(tSirLinkSpeedInfo));
 	if (!ls_ind) {
 		WMA_LOGE("%s: Memory allocation failed.", __func__);
-		return QDF_STATUS_E_NOMEM;
+		qdf_status = QDF_STATUS_E_NOMEM;
+	} else {
+		ls_ind->estLinkSpeed = link_speed;
+		if (mac_ctx->sme.pLinkSpeedIndCb)
+			mac_ctx->sme.pLinkSpeedIndCb(ls_ind,
+					mac_ctx->sme.pLinkSpeedCbContext);
+		else
+			WMA_LOGD("%s: pLinkSpeedIndCb is null", __func__);
+		qdf_mem_free(ls_ind);
 	}
-
-	ls_ind->estLinkSpeed = link_speed;
-	if (mac_ctx->sme.pLinkSpeedIndCb)
-		mac_ctx->sme.pLinkSpeedIndCb(ls_ind,
-				mac_ctx->sme.pLinkSpeedCbContext);
-	else
-		WMA_LOGD("%s: pLinkSpeedIndCb is null", __func__);
-
-	qdf_mem_free(ls_ind);
 
 	return qdf_status;
 }
@@ -4082,7 +4104,6 @@ void wma_get_stats_req(WMA_HANDLE handle,
 	tp_wma_handle wma_handle = (tp_wma_handle) handle;
 	struct wma_txrx_node *node;
 	struct pe_stats_req  cmd = {0};
-	uint8_t pdev_id;
 	tAniGetPEStatsRsp *pGetPEStatsRspParams;
 
 
@@ -4128,10 +4149,6 @@ void wma_get_stats_req(WMA_HANDLE handle,
 		node->stats_rsp->statsMask, get_stats_param->sessionId);
 
 	cmd.session_id = get_stats_param->sessionId;
-
-	cds_get_mac_id_by_session_id(get_stats_param->sessionId, &pdev_id);
-	cmd.pdev_id = WMA_MAC_TO_PDEV_MAP(pdev_id);
-
 	cmd.stats_mask = get_stats_param->statsMask;
 	if (wmi_unified_get_stats_cmd(wma_handle->wmi_handle, &cmd,
 				 node->bssid)) {
@@ -6403,9 +6420,6 @@ void wma_set_sta_wow_bitmask(uint32_t *bitmask, uint32_t wow_bitmap_size)
 	wma_set_wow_event_bitmap(WOW_TDLS_CONN_TRACKER_EVENT,
 			     WMI_WOW_MAX_EVENT_BM_LEN,
 			     bitmask);
-	wma_set_wow_event_bitmap(WOW_ROAM_PMKID_REQUEST_EVENT,
-				 WMI_WOW_MAX_EVENT_BM_LEN,
-				 bitmask);
 	/* Add further STA wakeup events above this line. */
 }
 
@@ -6559,35 +6573,5 @@ QDF_STATUS wma_get_roam_scan_stats(WMA_HANDLE handle,
 	WMA_LOGD("%s: Exit", __func__);
 
 	return QDF_STATUS_SUCCESS;
-}
-
-/**
- * wma_mgmt_pktcapture_status_map() - map Tx status for MGMT packets
- * with packet capture Tx status
- * @status: Tx status
- *
- * Return: pktcapture_tx_status enum
- */
-enum pktcapture_tx_status
-wma_mgmt_pktcapture_status_map(uint8_t status)
-{
-	enum pktcapture_tx_status tx_status;
-
-	switch (status) {
-	case WMI_MGMT_TX_COMP_TYPE_COMPLETE_OK:
-		tx_status = pktcapture_tx_status_ok;
-		break;
-	case WMI_MGMT_TX_COMP_TYPE_DISCARD:
-		tx_status = pktcapture_tx_status_discard;
-		break;
-	case WMI_MGMT_TX_COMP_TYPE_COMPLETE_NO_ACK:
-		tx_status = pktcapture_tx_status_no_ack;
-		break;
-	default:
-		tx_status = pktcapture_tx_status_discard;
-		break;
-	}
-
-	return tx_status;
 }
 

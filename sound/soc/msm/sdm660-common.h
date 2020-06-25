@@ -100,19 +100,17 @@ struct msm_asoc_mach_data {
 	struct device_node *comp_gpio_p; /* used by pinctrl API */
 	struct device_node *dmic_gpio_p; /* used by pinctrl API */
 	struct device_node *ext_spk_gpio_p; /* used by pinctrl API */
-
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	struct device_node *tert_mi2s_gpio_p;
-	/* Huaqin add for config i2s tert dai for nxp pa by xudayi at 2018/03/03 end */
-
+#endif
 	struct snd_soc_codec *codec;
 	struct sdm660_codec sdm660_codec_fn;
 	struct snd_info_entry *codec_root;
 	int spk_ext_pa_gpio;
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 start */
+#ifdef CONFIG_MACH_ASUS_SDM660
 	int hph_ext_en_gpio;
 	int hph_ext_sw_gpio;
-	/* Huaqin add for ZQL1650-155 by xudayi at 2018/02/02 end */
+#endif
 	int mclk_freq;
 	bool native_clk_set;
 	int lb_mode;

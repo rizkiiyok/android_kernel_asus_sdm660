@@ -3889,9 +3889,11 @@ static struct tag_csrscan_result *csr_scan_save_bss_description(tpAniSirGlobal
 }
 
 /* Append a Bss Description... */
-bool csr_scan_append_bss_description(tpAniSirGlobal pMac,
-				     tSirBssDescription *pSirBssDescription,
-				     tDot11fBeaconIEs *pIes, uint8_t sessionId)
+struct tag_csrscan_result *csr_scan_append_bss_description(tpAniSirGlobal pMac,
+						tSirBssDescription *
+						pSirBssDescription,
+						tDot11fBeaconIEs *pIes,
+						uint8_t sessionId)
 {
 	struct tag_csrscan_result *pCsrBssDescription = NULL;
 	tAniSSID tmpSsid;
@@ -3899,15 +3901,12 @@ bool csr_scan_append_bss_description(tpAniSirGlobal pMac,
 	int result;
 
 	tmpSsid.length = 0;
-
-	pCsrBssDescription = csr_scan_save_bss_description(pMac,
-					pSirBssDescription, pIes, sessionId);
-	if (!pCsrBssDescription)
-		return false;
 	result = csr_remove_dup_bss_description(pMac, pSirBssDescription,
 						&tmpSsid, &timer);
 
-	if (result) {
+	pCsrBssDescription = csr_scan_save_bss_description(pMac,
+					pSirBssDescription, pIes, sessionId);
+	if (result && (pCsrBssDescription != NULL)) {
 		/*
 		 * Check if the new one has SSID it it, if not, use the older
 		 * SSID if it exists.
@@ -3931,8 +3930,8 @@ bool csr_scan_append_bss_description(tpAniSirGlobal pMac,
 			}
 		}
 	}
-	csr_free_scan_result_entry(pMac, pCsrBssDescription);
-	return true;
+
+	return pCsrBssDescription;
 }
 
 static void csr_purge_channel_power(tpAniSirGlobal pMac, tDblLinkList
@@ -5877,8 +5876,10 @@ static void csr_populate_ie_whitelist_attrs(tSirSmeScanReq *msg,
 	qdf_mem_copy(msg->probe_req_ie_bitmap, scan_req->probe_req_ie_bitmap,
 		     PROBE_REQ_BITMAP_LEN * sizeof(uint32_t));
 	msg->oui_field_len = scan_req->num_vendor_oui * sizeof(*scan_req->voui);
-	msg->oui_field_offset = sizeof(tSirSmeScanReq) +
-				 scan_req->ChannelInfo.numOfChannels +
+	msg->oui_field_offset = (sizeof(tSirSmeScanReq) -
+				 sizeof(msg->channelList.channelNumber) +
+				 (sizeof(msg->channelList.channelNumber) *
+				 scan_req->ChannelInfo.numOfChannels)) +
 				 scan_req->uIEFieldLen;
 
 	if (scan_req->num_vendor_oui != 0)
@@ -5899,8 +5900,10 @@ static QDF_STATUS csr_send_mb_scan_req(tpAniSirGlobal pMac, uint16_t sessionId,
 	uint32_t i;
 	struct qdf_mac_addr selfmac;
 
-	msgLen = (uint16_t) (sizeof(tSirSmeScanReq) +
-		 (pScanReq->ChannelInfo.numOfChannels)) +
+	msgLen = (uint16_t) (sizeof(tSirSmeScanReq) -
+		 sizeof(pMsg->channelList.channelNumber) +
+		 (sizeof(pMsg->channelList.channelNumber) *
+		 pScanReq->ChannelInfo.numOfChannels)) +
 		 (pScanReq->uIEFieldLen) +
 		 pScanReq->num_vendor_oui * sizeof(*pScanReq->voui);
 
@@ -6054,8 +6057,10 @@ static QDF_STATUS csr_send_mb_scan_req(tpAniSirGlobal pMac, uint16_t sessionId,
 	}
 
 	pMsg->uIEFieldLen = (uint16_t) pScanReq->uIEFieldLen;
-	pMsg->uIEFieldOffset = (uint16_t) (sizeof(tSirSmeScanReq) +
-					(pMsg->channelList.numChannels));
+	pMsg->uIEFieldOffset = (uint16_t) (sizeof(tSirSmeScanReq) -
+			sizeof(pMsg->channelList.channelNumber) +
+			(sizeof(pMsg->channelList.channelNumber) *
+			 pScanReq->ChannelInfo.numOfChannels));
 	if (pScanReq->uIEFieldLen != 0) {
 		qdf_mem_copy((uint8_t *) pMsg + pMsg->uIEFieldOffset,
 			     pScanReq->pIEField, pScanReq->uIEFieldLen);
@@ -7144,7 +7149,7 @@ QDF_STATUS csr_scan_for_ssid(tpAniSirGlobal mac_ctx, uint32_t session_id,
 	tpCsrNeighborRoamControlInfo neighbor_roaminfo =
 		&mac_ctx->roam.neighborRoamInfo[session_id];
 	tCsrSSIDs *ssids = NULL;
-	struct csr_scan_for_ssid_context *context = NULL;
+	struct csr_scan_for_ssid_context *context;
 
 	if (!(mac_ctx->scan.fScanEnable) && (num_ssid != 1)) {
 		sme_err(
@@ -7317,7 +7322,6 @@ error:
 			csr_roam_call_callback(mac_ctx, session_id, NULL,
 					roam_id, eCSR_ROAM_FAILED,
 					eCSR_ROAM_RESULT_FAILURE);
-		qdf_mem_free(context);
 	}
 	return status;
 }
@@ -8148,7 +8152,7 @@ QDF_STATUS csr_scan_create_entry_in_scan_cache(tpAniSirGlobal pMac,
 	qdf_mem_copy(pNewBssDescriptor->bssId, bssid.bytes,
 			sizeof(tSirMacAddr));
 	pNewBssDescriptor->channelId = channel;
-	if (!csr_scan_append_bss_description(pMac, pNewBssDescriptor,
+	if (NULL == csr_scan_append_bss_description(pMac, pNewBssDescriptor,
 						pNewIes, sessionId)) {
 		sme_err("csr_scan_append_bss_description failed");
 		status = QDF_STATUS_E_FAILURE;

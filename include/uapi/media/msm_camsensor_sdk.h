@@ -256,9 +256,9 @@ enum msm_camera_i2c_operation {
 	MSM_CAM_WRITE = 0,
 	MSM_CAM_POLL,
 	MSM_CAM_READ,
-	/*Huaqin add third supply front camera hi846 tsp by lizihao at 2018/04/10 start*/
+#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
 	MSM_CAM_SINGLE_LOOP_READ,
-	/*Huaqin add third supply front camera hi846 tsp by lizihao at 2018/04/10 end*/
+#endif
 };
 
 struct msm_sensor_i2c_sync_params {

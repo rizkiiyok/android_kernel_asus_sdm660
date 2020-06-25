@@ -604,15 +604,16 @@
 #define KEY_BRIGHTNESS_MIN		0x250	/* Set Brightness to Minimum */
 #define KEY_BRIGHTNESS_MAX		0x251	/* Set Brightness to Maximum */
 
-/* Huaqin add define for fingerprint nav-keycode by leiyu at 2018/04/12 start */
-#define FP_KEY_UP			0x258
+#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
+#define FP_KEY_UP		0x258
 #define FP_KEY_DOWN		0x259
 #define FP_KEY_LEFT		0x25a
 #define FP_KEY_RIGHT		0x25b
 #define FP_KEY_CLICK		0x25c
-#define FP_KEY_DOUBLE_CLICK		0x25d
-#define FP_KEY_LONG_PRESS          0x25e
-/* Huaqin add define for fingerprint nav-keycode by leiyu at 2018/04/12 end */
+#define FP_KEY_DOUBLE_CLICK	0x25d
+#define FP_KEY_LONG_PRESS	0x25e
+#endif
+
 #define KEY_KBDINPUTASSIST_PREV		0x260
 #define KEY_KBDINPUTASSIST_NEXT		0x261
 #define KEY_KBDINPUTASSIST_PREVGROUP		0x262
@@ -661,24 +662,22 @@
 #define BTN_TRIGGER_HAPPY38		0x2e5
 #define BTN_TRIGGER_HAPPY39		0x2e6
 #define BTN_TRIGGER_HAPPY40		0x2e7
+
+#ifdef CONFIG_MACH_ASUS_SDM660
+#ifdef CONFIG_INPUT_SX9310
 #define KEY_SARSENSOR_NEAR		0x2ea
 #define KEY_SARSENSOR_FAR		0x2eb
+#endif
 
-//Huaqin add for asus gesture by xudongfang at 2018/9/5 start
-#define KEY_TP_GESTURE_DOUBLE_CLICK 	KEY_WAKEUP
-#define KEY_TP_GESTURE_C 		249
-#define KEY_TP_GESTURE_E 		250
-#define KEY_TP_GESTURE_S 		251
-#define KEY_TP_GESTURE_V 		252
-#define KEY_TP_GESTURE_W 		253
-#define KEY_TP_GESTURE_Z 		254
-#define KEY_TP_GESTURE_SWIPE_UP         255
-#define KEY_TP_GESTURE_SWIPE_DOWN       256
-#define KEY_TP_GESTURE_SWIPE_LEFT       257
-#define KEY_TP_GESTURE_SWIPE_RIGHT      258
-//Huaqin add for asus gesture by xudongfang at 2018/9/5 end
-
-
+#define KEY_TP_GESTURE_SWIPE_UP 	0x2F6
+#define KEY_TP_GESTURE_DOUBLE_CLICK 	0x2F7
+#define KEY_TP_GESTURE_C 		0x2F0
+#define KEY_TP_GESTURE_E 		0x2ED
+#define KEY_TP_GESTURE_S 		0x2EE
+#define KEY_TP_GESTURE_V 		0x2F1
+#define KEY_TP_GESTURE_W 		0x2EC
+#define KEY_TP_GESTURE_Z 		0x2EF
+#endif
 
 /* We avoid low common keys in module aliases so they don't get huge. */
 #define KEY_MIN_INTERESTING	KEY_MUTE

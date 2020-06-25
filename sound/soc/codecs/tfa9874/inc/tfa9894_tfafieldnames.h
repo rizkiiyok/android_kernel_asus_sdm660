@@ -1,6 +1,10 @@
-/** Filename: tfa9894_tfaFieldnames.h
- *  This file was generated automatically on 09/06/17 at 14:51:37. 
- *  Source file: TFA9894_N1A1_I2C_RegisterMap.xlsx
+/*
+ * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
  */
 
 #ifndef _TFA9894_TFAFIELDNAMES_H
@@ -530,6 +534,7 @@ typedef enum nxpTfa9894BfEnumList {
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
+#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA9894_BITNAMETABLE static tfaBfName_t Tfa9894BitNames[]= {\
    { 0x0, "powerdown"},    /* Powerdown control                                 , */\
    { 0x10, "reset"},    /* I2C Reset - Auto clear                            , */\
@@ -1055,6 +1060,7 @@ typedef enum nxpTfa9894BfEnumList {
    { 0xff07, "calibr_osc_delta_ndiv"},    /* Calibration data for OSC1M, signed number representation, */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
+#endif /* CONFIG_MACH_ASUS_X00TD */
 
 enum tfa9894_irq {
 	tfa9894_irq_max = -1,

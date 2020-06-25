@@ -1,8 +1,8 @@
 /*
  * Copyright (C) 2010 - 2017 Novatek, Inc.
  *
- * $Revision: 20251 $
- * $Date: 2017-12-13 17:41:29 +0800 (周三, 13 十二月 2017) $
+ * $Revision: 15382 $
+ * $Date: 2017-08-15 09:19:01 +0800 (周二, 15 八月 2017) $
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,14 @@
 #include <linux/delay.h>
 
 #include "nt36xxx.h"
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  start
+#include "../../../../drivers/video/fbdev/msm/mdss_dsi.h"
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  end
 
 #if NVT_TOUCH_EXT_PROC
-#define NVT_FW_VERSION "nvt_fw_version"
+/* Huaqin add by yuexinghan for TP hardwareinfo, 20171027 start */
+#define NVT_FW_VERSION "nvt_info"
+/* Huaqin add by yuexinghan for TP hardwareinfo, 20171027 end */
 #define NVT_BASELINE "nvt_baseline"
 #define NVT_RAW "nvt_raw"
 #define NVT_DIFF "nvt_diff"
@@ -252,6 +257,17 @@ return:
 *******************************************************/
 static int32_t c_fw_version_show(struct seq_file *m, void *v)
 {
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  start
+	seq_printf(m, "vendor=Novatek\n");
+	seq_printf(m, "IC=nvt36672\n");
+	NVT_LOG("zhengwu1 nvt_tp_check=%d\n",nvt_tp_check);
+	if(nvt_tp_check == 0){
+	seq_printf(m, "module=DJ\n");
+	}
+	else if (nvt_tp_check == 1){
+	seq_printf(m, "module=TXD\n");
+	}
+// Huaqin add for nvt_tp check function. by zhengwu.lu. at 2018/03/01  end
 	seq_printf(m, "fw_ver=%d, x_num=%d, y_num=%d, button_num=%d\n", ts->fw_ver, ts->x_num, ts->y_num, ts->max_button_num);
 	return 0;
 }
@@ -359,10 +375,11 @@ static int32_t nvt_fw_version_open(struct inode *inode, struct file *file)
 	}
 
 	NVT_LOG("++\n");
-
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
+		nvt_esd_check_enable(false);
+#endif
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
 
 	if (nvt_get_fw_info()) {
 		mutex_unlock(&ts->lock);
@@ -398,10 +415,11 @@ static int32_t nvt_baseline_open(struct inode *inode, struct file *file)
 	}
 
 	NVT_LOG("++\n");
-
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
+			nvt_esd_check_enable(false);
+#endif
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
 
 	if (nvt_clear_fw_status()) {
 		mutex_unlock(&ts->lock);
@@ -458,10 +476,11 @@ static int32_t nvt_raw_open(struct inode *inode, struct file *file)
 	}
 
 	NVT_LOG("++\n");
-
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start	
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
+		nvt_esd_check_enable(false);
+#endif
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
 
 	if (nvt_clear_fw_status()) {
 		mutex_unlock(&ts->lock);
@@ -525,10 +544,11 @@ static int32_t nvt_diff_open(struct inode *inode, struct file *file)
 	}
 
 	NVT_LOG("++\n");
-
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  start
 #if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
+		nvt_esd_check_enable(false);
+#endif
+// Huaqin add for esd check function. by zhengwu.lu. at 2018/2/28  end
 
 	if (nvt_clear_fw_status()) {
 		mutex_unlock(&ts->lock);

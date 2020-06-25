@@ -1090,9 +1090,9 @@ fb_blank(struct fb_info *info, int blank)
  	return ret;
 }
 EXPORT_SYMBOL(fb_blank);
-/*Huaqin modify by qimaokang for No repetition lcd suspend start*/
+#ifdef CONFIG_MACH_ASUS_X01BD
 bool lcd_suspend_flag = false;
-/*Huaqin modify by qimaokang for No repetition lcd suspend end*/
+#endif
 static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg, struct file *file)
 {
@@ -1222,12 +1222,12 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			return -ENODEV;
 		}
 		info->flags |= FBINFO_MISC_USEREVENT;
-/*Huaqin modify by qimaokang for No repetition lcd suspend start*/
+#ifdef CONFIG_MACH_ASUS_X01BD
 		if (arg == FB_BLANK_POWERDOWN) {
 			lcd_suspend_flag = true;
 			printk("[Display] FB_BLANK_POWERDOWN\n");
 		}
-/*Huaqin modify by qimaokang for No repetition lcd suspend end*/
+#endif
 		ret = fb_blank(info, arg);
 		info->flags &= ~FBINFO_MISC_USEREVENT;
 		unlock_fb_info(info);

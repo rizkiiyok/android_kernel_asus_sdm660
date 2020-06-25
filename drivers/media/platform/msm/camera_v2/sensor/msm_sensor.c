@@ -17,16 +17,13 @@
 #include "msm_camera_i2c_mux.h"
 #include <linux/regulator/rpm-smd-regulator.h>
 #include <linux/regulator/consumer.h>
-/* Huaqin modify for ID Pin differentiation by lizihao at 2018/05/29 start*/
+#ifdef CONFIG_MACH_ASUS_X01BD
 #include <linux/gpio.h>
 
 #define SUB_CAM_ID_PIN 55
-/* Huaqin modify for ID Pin differentiation by lizihao at 2018/05/29 end*/
-
-/* Huaqin modify for ov8856-1b compatible by lizihao at 2018/06/22 start*/
 int ov8856_read_mask = 0;
 uint16_t ov8856_mask = 0;
-/* Huaqin modify for ov8856-1b compatible by lizihao at 2018/06/22 end*/
+#endif
 
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
@@ -250,9 +247,9 @@ int msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int rc = 0;
 	uint16_t chipid = 0;
-	/* Huaqin modify for ov8856-1b compatible by lizihao at 2018/06/22 start*/
+#ifdef CONFIG_MACH_ASUS_X01BD
 	int id_match = 0;
-	/* Huaqin modify for ov8856-1b compatible by lizihao at 2018/06/22 end*/
+#endif
 	struct msm_camera_i2c_client *sensor_i2c_client;
 	struct msm_camera_slave_info *slave_info;
 	const char *sensor_name;
@@ -287,11 +284,12 @@ int msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 		pr_err("%s chip id %x does not match %x\n",
 				__func__, chipid, slave_info->sensor_id);
 		return -ENODEV;
-	/* Huaqin modify for ov8856-1b compatible by lizihao at 2018/06/22 start*/
+#ifdef CONFIG_MACH_ASUS_X01BD
 	}else{
 		id_match = 1;
+#endif
 	}
-
+#ifdef CONFIG_MACH_ASUS_X01BD
 	if(0 == strcmp(sensor_name, "ov8856_chicony_front") && 1 == id_match && 0 == ov8856_read_mask ){
 
 		pr_err("ov8856-1b time stamp");
@@ -358,7 +356,7 @@ int msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 		pr_err("Sub camera is 16+5M holitech Configuration");
 		return -ENODEV;
 	}
-	/* Huaqin modify for ID Pin differentiation by lizihao at 2018/05/29 end*/
+#endif
 
 	return rc;
 }

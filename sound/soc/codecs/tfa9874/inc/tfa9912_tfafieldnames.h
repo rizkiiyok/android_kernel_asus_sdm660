@@ -1,11 +1,14 @@
-/** Filename: tfa9912_tfafieldnames.h
- *  This file was generated automatically on 06/14/17 at 18:04:05. 
- *  Source file: TFA9912_N1A_I2C_regmap_V1.41.xlsx
+/*
+ * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
  */
 
 #ifndef _TFA9912_TFAFIELDNAMES_H
 #define _TFA9912_TFAFIELDNAMES_H
-
 
 #define TFA9912_I2CVERSION    1.41
 
@@ -937,6 +940,7 @@ typedef enum nxpTfa9912BfEnumList {
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
+#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA9912_BITNAMETABLE static tfaBfName_t Tfa9912BitNames[]= {\
    { 0x0, "powerdown"},    /* Powerdown selection                               , */\
    { 0x10, "reset"},    /* I2C Reset - Auto clear                            , */\
@@ -1665,6 +1669,7 @@ typedef enum nxpTfa9912BfEnumList {
    { 0xff81, "fro8_boost_i"},    /* Self bias current selection                       , */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
+#endif /* CONFIG_MACH_ASUS_X00TD */
 
 enum tfa9912_irq {
 	tfa9912_irq_stvdds = 0,
