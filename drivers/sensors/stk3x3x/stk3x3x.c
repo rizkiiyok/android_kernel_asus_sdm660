@@ -82,7 +82,7 @@
 	#include "stk3x3x.h"
 #endif
 /*Huaqin modify for als by zhuqiang at 2018/10/24 start*/
-static char mdss_mdp_panel[256];
+extern char mdss_mdp_panel[256];
 bool lcm_flags = 0;
 /*Huaqin modify for als by zhuqiang at 2018/10/24 end*/
 /*Huaqin add for ps adjustmen by zhuqiang at 2018/11/15 start*/

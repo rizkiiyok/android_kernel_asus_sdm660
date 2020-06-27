@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -3417,7 +3417,7 @@ static int pp_ad_calc_bl(struct msm_fb_data_type *mfd, int bl_in, int *bl_out,
 	}
 
 	if (!ad->bl_mfd || !ad->bl_mfd->panel_info ||
-		!ad->bl_att_lut) {
+		ad->bl_att_lut == NULL) {
 		pr_err("Invalid ad info: bl_mfd = 0x%pK, ad->bl_mfd->panel_info = 0x%pK, bl_att_lut = 0x%pK\n",
 			ad->bl_mfd,
 			(!ad->bl_mfd) ? NULL : ad->bl_mfd->panel_info,
@@ -4129,7 +4129,8 @@ int mdss_mdp_igc_lut_config(struct msm_fb_data_type *mfd,
 		if (config->len != IGC_LUT_ENTRIES) {
 			pr_err("invalid len for IGC table for read %d\n",
 			       config->len);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto igc_config_exit;
 		}
 		ret = pp_get_dspp_num(disp_num, &dspp_num);
 		if (ret) {
@@ -4195,7 +4196,8 @@ clock_off:
 		if (config->len != IGC_LUT_ENTRIES) {
 			pr_err("invalid len for IGC table for write %d\n",
 			       config->len);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto igc_config_exit;
 		}
 		if (copy_from_kernel) {
 			memcpy(&mdss_pp_res->igc_lut_c0c1[disp_num][0],
@@ -6968,7 +6970,7 @@ static int is_valid_calib_dspp_addr(char __iomem *ptr)
 			ret = MDP_PP_OPS_READ | MDP_PP_OPS_WRITE;
 			break;
 		/* Dither enable/disable */
-		} else if ((ptr == base + MDSS_MDP_REG_DSPP_DITHER_DEPTH)) {
+		} else if (ptr == base + MDSS_MDP_REG_DSPP_DITHER_DEPTH) {
 			ret = MDP_PP_OPS_READ | MDP_PP_OPS_WRITE;
 			break;
 		/* Six zone and mem color */

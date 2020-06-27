@@ -1,15 +1,25 @@
 /*
- * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
+ * Copyright 2014-2017 NXP Semiconductors
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #ifndef TFA_SERVICE_H
 #define TFA_SERVICE_H
 
+//#include "config.h"
+// workaround for Visual Studio:
+// fatal error C1083: Cannot open include file: 'config.h': No such file or directory
 #ifdef __KERNEL__
 #include <linux/types.h>
 #else
@@ -820,7 +830,6 @@ uint16_t tfa_get_bf_value(const uint16_t bf, const uint16_t reg_value);
 int tfa_write_reg(struct tfa_device *tfa, const uint16_t bf, const uint16_t reg_value);
 int tfa_read_reg(struct tfa_device *tfa, const uint16_t bf);
 
-#ifdef CONFIG_MACH_ASUS_SDM660
 /* bitfield */
 /** 
  * get the datasheet or bitfield name corresponding to the bitfield number
@@ -855,7 +864,6 @@ uint16_t tfaContBfEnum(const char *name, unsigned short rev);
 * @param name is the bitfield name for which to get the bitfield number
  */
 uint16_t tfaContBfEnumAny(const char *name);
-#endif /* CONFIG_MACH_ASUS_X00TD */
 
 #define TFA_FAM(tfa, fieldname) ((tfa->tfa_family == 1) ? TFA1_BF_##fieldname :  TFA2_BF_##fieldname)
 #define TFA_FAM_FW(tfa, fwname) ((tfa->tfa_family == 1) ? TFA1_FW_##fwname :  TFA2_FW_##fwname)

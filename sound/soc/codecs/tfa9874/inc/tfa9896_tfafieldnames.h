@@ -1,14 +1,11 @@
-/*
- * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
+/** Filename: tfa9896_tfafieldnames.h
+ *  This file was generated automatically on 08/15/16 at 09:43:38. 
+ *  Source file: TFA9896_N1B1_I2C_regmap_V16.xlsx
  */
 
 #ifndef _TFA9896_TFAFIELDNAMES_H
 #define _TFA9896_TFAFIELDNAMES_H
+
 
 #define TFA9896_I2CVERSION    16
 
@@ -378,7 +375,6 @@ typedef enum nxpTFA9896BfEnumList {
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
-#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA9896_BITNAMETABLE static tfaBfName_t Tfa9896BitNames[]= {\
    { 0x0, "flag_por"},    /* Power-on-reset flag (auto clear by reading)       , */\
    { 0x10, "flag_pll_lock"},    /* PLL lock to programmed frequency                  , */\
@@ -860,7 +856,6 @@ typedef enum nxpTFA9896BfEnumList {
    { 0x8f0f, "production_data6"},    /* production_data6                                  , */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
-#endif /* CONFIG_MACH_ASUS_X00TD */
 
 enum TFA9896_irq {
 	TFA9896_irq_vdds = 0,

@@ -1296,6 +1296,7 @@ struct ipa3_context {
 	struct ipa_cne_evt ipa_cne_evt_req_cache[IPA_MAX_NUM_REQ_CACHE];
 	int num_ipa_cne_evt_req;
 	struct mutex ipa_cne_evt_lock;
+	bool fw_loaded;
 };
 
 /**

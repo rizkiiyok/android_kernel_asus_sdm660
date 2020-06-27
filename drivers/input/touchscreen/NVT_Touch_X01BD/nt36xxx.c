@@ -39,6 +39,7 @@
 #endif
 
 #include "nt36xxx.h"
+#if 0
 /* Huaqin add by zhangxiude for ITO test start */
 #include <linux/init.h>
 #include <linux/cdev.h>
@@ -52,6 +53,7 @@
 #include <linux/list.h>
 #include <linux/device.h>
 /* Huaqin add by zhangxiude for ITO test end */
+#endif
 #if NVT_TOUCH_ESD_PROTECT
 #include <linux/jiffies.h>
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
@@ -231,26 +233,32 @@ const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
 //Huaqin add for asus gesture by xudongfang at 2018/9/5 start
 #define GESTURE_EVENT_C 		KEY_TP_GESTURE_C
 #define GESTURE_EVENT_E 		KEY_TP_GESTURE_E
+#define GESTURE_EVENT_M			KEY_TP_GESTURE_M
+#define GESTURE_EVENT_O			KEY_TP_GESTURE_O
 #define GESTURE_EVENT_S 		KEY_TP_GESTURE_S
 #define GESTURE_EVENT_V 		KEY_TP_GESTURE_V
 #define GESTURE_EVENT_W 		KEY_TP_GESTURE_W
 #define GESTURE_EVENT_Z 		KEY_TP_GESTURE_Z
-#define GESTURE_EVENT_SWIPE_UP KEY_TP_GESTURE_SWIPE_UP
+#define GESTURE_EVENT_SWIPE_UP		KEY_TP_GESTURE_SWIPE_UP
+#define GESTURE_EVENT_SWIPE_DOWN	KEY_TP_GESTURE_SWIPE_DOWN
+#define GESTURE_EVENT_SWIPE_LEFT	KEY_TP_GESTURE_SWIPE_LEFT
+#define GESTURE_EVENT_SWIPE_RIGHT	KEY_TP_GESTURE_SWIPE_RIGHT
 #define GESTURE_EVENT_DOUBLE_CLICK	KEY_WAKEUP
 
 const uint16_t gesture_key_array[] = {
 	GESTURE_EVENT_C,  //GESTURE_WORD_C
 	GESTURE_EVENT_W,  //GESTURE_WORD_W
 	GESTURE_EVENT_V,  //GESTURE_WORD_V
-//Huaqin add for gesture by xudongfang at 20180913 start
-	GESTURE_EVENT_DOUBLE_CLICK,//GESTURE_EVENT_DOUBLE_CLICK,  //GESTURE_DOUBLE_CLICK
-//Huaqin add for gesture by xudongfang at 20180913 end
+	GESTURE_EVENT_DOUBLE_CLICK,//GESTURE_DOUBLE_CLICK
 	GESTURE_EVENT_Z,  //GESTURE_WORD_Z
-	GESTURE_EVENT_E,  //GESTURE_WORD_M
+	GESTURE_EVENT_M,  //GESTURE_WORD_M
+	GESTURE_EVENT_O,  //GESTURE_WORD_O
+	GESTURE_EVENT_E,  //GESTURE_WORD_E
 	GESTURE_EVENT_S,  //GESTURE_WORD_S
 	GESTURE_EVENT_SWIPE_UP,  //GESTURE_SLIDE_UP
-//Huaqin add for asus gesture by xudongfang at 2018/9/5 end
-
+	GESTURE_EVENT_SWIPE_DOWN,  //GESTURE_SLIDE_DOWN
+	GESTURE_EVENT_SWIPE_LEFT,  //GESTURE_SLIDE_LEFT
+	GESTURE_EVENT_SWIPE_RIGHT,  //GESTURE_SLIDE_RIGHT
 };
 #endif
 
@@ -897,6 +905,8 @@ int32_t nvt_tp_info_proc_init(void)
 	}
 	return 0;
 }
+
+#if 0
 /* Huaqin add by zhangxiude for ITO test start */
 /**********add ito test mode function  *******************/
 int nvt_TestResultLen=0;
@@ -948,6 +958,7 @@ int nvt_test_node_init(struct platform_device *tpinfo_device)
     return err;
 }
 /* Huaqin add by zhangxiude for ITO test end */
+#endif
 
 #if WAKEUP_GESTURE
 #define GESTURE_WORD_C          12
@@ -1015,7 +1026,6 @@ void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 			NVT_LOG("Gesture : Word-Z.\n");
 			keycode = gesture_key_array[4];
 			break;
-//Huaqin add for asus gesture by xudongfang at 2018/9/5 start
 		case GESTURE_WORD_M:
 			NVT_LOG("Gesture : Word-M.\n");
 			keycode = gesture_key_array[5];
@@ -1026,15 +1036,15 @@ void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 			break;
 		case GESTURE_WORD_e:
 			NVT_LOG("Gesture : Word-e.\n");
-			keycode = gesture_key_array[5];
+			keycode = gesture_key_array[7];
 			break;
 		case GESTURE_WORD_S:
 			NVT_LOG("Gesture : Word-S.\n");
-			keycode = gesture_key_array[6];
+			keycode = gesture_key_array[8];
 			break;
 		case GESTURE_SLIDE_UP:
 			NVT_LOG("Gesture : Slide UP.\n");
-			keycode = gesture_key_array[7];
+			keycode = gesture_key_array[9];
 			break;
 		case GESTURE_SLIDE_DOWN:
 			NVT_LOG("Gesture : Slide DOWN.\n");
@@ -1048,7 +1058,6 @@ void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 			NVT_LOG("Gesture : Slide RIGHT.\n");
 			keycode = gesture_key_array[12];
 			break;
-//Huaqin add for asus gesture by xudongfang at 2018/9/5 end
 		default:
 			break;
 	}
@@ -1710,11 +1719,13 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	/*Huaqin modify for work delay by lanshiming at 2018/11/6 end*/
 #endif
 
+#if 0
 	/* Huaqin add by zhangxiude for ITO test start */
 	//--------add ito node
 	platform_device_register(&hwinfo_device);
 	nvt_test_node_init(&hwinfo_device);
 	/* Huaqin add by zhangxiude for ITO test end */
+#endif
 	firmware_id=ts->fw_ver;
 	nvt_tp_info_proc_init();
 

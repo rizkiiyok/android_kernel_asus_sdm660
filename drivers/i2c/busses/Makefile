@@ -97,6 +97,7 @@ obj-$(CONFIG_I2C_XLR)		+= i2c-xlr.o
 obj-$(CONFIG_I2C_XLP9XX)	+= i2c-xlp9xx.o
 obj-$(CONFIG_I2C_RCAR)		+= i2c-rcar.o
 obj-$(CONFIG_I2C_MSM_V2)        += i2c-msm-v2.o
+obj-$(CONFIG_VIRTIO_I2C)	+= virtio-i2c.o
 
 # External I2C/SMBus adapter drivers
 obj-$(CONFIG_I2C_DIOLAN_U2C)	+= i2c-diolan-u2c.o
@@ -121,7 +122,3 @@ obj-$(CONFIG_I2C_XGENE_SLIMPRO) += i2c-xgene-slimpro.o
 obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
 
 ccflags-$(CONFIG_I2C_DEBUG_BUS) := -DDEBUG
-
-#TODO: remove me b/62058353
-subdir-ccflags-y += \
-	-Wno-duplicate-decl-specifier

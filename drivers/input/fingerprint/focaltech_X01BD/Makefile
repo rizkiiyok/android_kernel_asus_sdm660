@@ -1,4 +1,3 @@
-
 ccflags-y += -D__FF_BUILD_DATE=\"$(shell date +%Y%m%d)\"
 
 # Early-logging level for ff_hal, ff_ta and driver as well. Note that this
@@ -17,5 +16,3 @@ ccflags-y += -D__FF_EARLY_LOG_LEVEL=2
 obj-y := focaltech_fp.o
 focaltech_fp-objs := ff_ctl.o ff_spi.o spidev.o
 focaltech_fp-objs += plat-msm8916.o
-
-

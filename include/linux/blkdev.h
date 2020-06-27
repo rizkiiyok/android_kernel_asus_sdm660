@@ -44,7 +44,7 @@ struct pr_ops;
  * Maximum number of blkcg policies allowed to be registered concurrently.
  * Defined here to simplify include dependency.
  */
-#define BLKCG_MAX_POLS		3
+#define BLKCG_MAX_POLS		2
 
 struct request;
 typedef void (rq_end_io_fn)(struct request *, int);
@@ -434,7 +434,8 @@ struct request_queue {
 	unsigned int		sg_reserved_size;
 	int			node;
 #ifdef CONFIG_BLK_DEV_IO_TRACE
-	struct blk_trace	*blk_trace;
+	struct blk_trace __rcu	*blk_trace;
+	struct mutex		blk_trace_mutex;
 #endif
 	/*
 	 * for flush operations

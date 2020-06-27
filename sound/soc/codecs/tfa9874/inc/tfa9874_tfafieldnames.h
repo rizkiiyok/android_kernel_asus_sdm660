@@ -1,14 +1,11 @@
-/*
- * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
+/** Filename: tfa9874_tfafieldnames.h
+ *  This file was generated automatically on 08/22/17 at 13:43:43. 
+ *  Source file: TFA9874N1C0_DefaultI2CSettings.xlsx
  */
 
 #ifndef _TFA9874_TFAFIELDNAMES_H
 #define _TFA9874_TFAFIELDNAMES_H
+
 
 #define TFA9874_I2CVERSION    1
 
@@ -360,7 +357,6 @@ typedef enum nxpTfa9874BfEnumList {
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
-#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA9874_BITNAMETABLE static tfaBfName_t Tfa9874BitNames[]= {\
    { 0x0, "powerdown"},    /* Powerdown selection                               , */\
    { 0x10, "reset"},    /* I2C Reset - Auto clear                            , */\
@@ -807,7 +803,6 @@ typedef enum nxpTfa9874BfEnumList {
    { 0xff87, "spare_mtp7_15_08"},    /* SPARE                                             , */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
-#endif /* CONFIG_MACH_ASUS_X00TD */
 
 enum tfa9874_irq {
 	tfa9874_irq_stvdds = 0,

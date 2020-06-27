@@ -105,7 +105,7 @@ static struct mdss_panel_intf pan_types[] = {
 	{"edp", MDSS_PANEL_INTF_EDP},
 	{"hdmi", MDSS_PANEL_INTF_HDMI},
 };
-#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
+#ifndef CONFIG_MACH_ASUS_SDM660
 static
 #endif
 char mdss_mdp_panel[MDSS_MAX_PANEL_LEN];
@@ -5632,7 +5632,7 @@ static int __init mdss_mdp_driver_init(void)
 
 }
 
-#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
+#ifdef CONFIG_MACH_ASUS_SDM660
 EXPORT_SYMBOL(mdss_mdp_panel);
 #endif
 

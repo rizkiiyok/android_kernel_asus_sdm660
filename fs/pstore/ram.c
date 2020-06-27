@@ -38,11 +38,7 @@
 #include <linux/of_address.h>
 
 #define RAMOOPS_KERNMSG_HDR "===="
-#ifdef CONFIG_MACH_ASUS_X00TD
-#define MIN_MEM_SIZE 262144UL /* 256 * 1024UL */
-#else
 #define MIN_MEM_SIZE 4096UL
-#endif
 
 static ulong record_size = MIN_MEM_SIZE;
 module_param(record_size, ulong, 0400);
@@ -61,20 +57,12 @@ static ulong ramoops_pmsg_size = MIN_MEM_SIZE;
 module_param_named(pmsg_size, ramoops_pmsg_size, ulong, 0400);
 MODULE_PARM_DESC(pmsg_size, "size of user space message log");
 
-#ifdef CONFIG_MACH_ASUS_X00TD
-static ulong mem_address = 0x9ff00000;
-#else
 static ulong mem_address;
-#endif
 module_param(mem_address, ulong, 0400);
 MODULE_PARM_DESC(mem_address,
 		"start of reserved RAM used to store oops/panic logs");
 
-#ifdef CONFIG_MACH_ASUS_X00TD
-static ulong mem_size = 0x00100000;
-#else
 static ulong mem_size;
-#endif
 module_param(mem_size, ulong, 0400);
 MODULE_PARM_DESC(mem_size,
 		"size of reserved RAM used to store oops/panic logs");
@@ -245,7 +233,7 @@ static ssize_t ramoops_pstore_read(u64 *id, enum pstore_type_id *type,
 	/* ECC correction notice */
 	ecc_notice_size = persistent_ram_ecc_string(prz, NULL, 0);
 
-	*buf = kmalloc(size + ecc_notice_size + 1, GFP_KERNEL);
+	*buf = vmalloc(size + ecc_notice_size + 1);
 	if (*buf == NULL)
 		return -ENOMEM;
 
@@ -309,7 +297,6 @@ static int notrace ramoops_pstore_write_buf(enum pstore_type_id type,
 	if (type != PSTORE_TYPE_DMESG)
 		return -EINVAL;
 
-#ifndef CONFIG_MACH_ASUS_X00TD
 	/* Out of the various dmesg dump types, ramoops is currently designed
 	 * to only store crash logs, rather than storing general kernel logs.
 	 */
@@ -320,7 +307,6 @@ static int notrace ramoops_pstore_write_buf(enum pstore_type_id type,
 	/* Skip Oopes when configured to do so. */
 	if (reason == KMSG_DUMP_OOPS && !cxt->dump_oops)
 		return -EINVAL;
-#endif
 
 	/* Explicitly only take the first part of any new crash.
 	 * If our buffer is larger than kmsg_bytes, this can never happen,

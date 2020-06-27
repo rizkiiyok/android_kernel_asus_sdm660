@@ -36,6 +36,8 @@
 #define USB_VENDOR_GENESYS_LOGIC		0x05e3
 #define HUB_QUIRK_CHECK_PORT_AUTOSUSPEND	0x01
 
+extern int deny_new_usb;
+
 /* Protect struct usb_device->state and ->children members
  * Note: Both are also protected by ->dev.sem, except that ->state can
  * change to USB_STATE_NOTATTACHED even when the semaphore isn't held. */
@@ -1727,14 +1729,8 @@ static int hub_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	 * - Change autosuspend delay of hub can avoid unnecessary auto
 	 *   suspend timer for hub, also may decrease power consumption
 	 *   of USB bus.
-	 *
-	 * - If user has indicated to prevent autosuspend by passing
-	 *   usbcore.autosuspend = -1 then keep autosuspend disabled.
 	 */
-#ifdef CONFIG_PM
-	if (hdev->dev.power.autosuspend_delay >= 0)
-		pm_runtime_set_autosuspend_delay(&hdev->dev, 0);
-#endif
+	pm_runtime_set_autosuspend_delay(&hdev->dev, 0);
 
 	/*
 	 * Hubs have proper suspend/resume support, except for root hubs
@@ -4795,6 +4791,12 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
 			goto done;
 		return;
 	}
+
+	if (deny_new_usb) {
+		dev_err(&port_dev->dev, "denied insert of USB device on port %d\n", port1);
+		goto done;
+	}
+
 	if (hub_is_superspeed(hub->hdev))
 		unit_load = 150;
 	else

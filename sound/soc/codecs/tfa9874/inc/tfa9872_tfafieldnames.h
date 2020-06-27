@@ -1,18 +1,16 @@
-/*
- * Copyright (C) 2018 NXP Semiconductors, All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
+/** Filename: Tfa9872_TfaFieldnames.h
+ *  This file was generated automatically on 10/11/16 at 10:19:27. 
+ *  Source file: TFA9872N1B2_DefaultI2CSettings -v16.xlsx
  */
 
 #ifndef _TFA9872_TFAFIELDNAMES_H
 #define _TFA9872_TFAFIELDNAMES_H
 
+
 #define TFA9872_I2CVERSION_N1A    26
 #define TFA9872_I2CVERSION_N1B    29
 #define TFA9872_I2CVERSION_N1B2   21
+
 
 typedef enum nxpTfa9872BfEnumList {
     TFA9872_BF_PWDN  = 0x0000,    /*!< Powerdown selection                                */
@@ -592,7 +590,6 @@ typedef enum nxpTfa9872BfEnumList {
    { 0xffff,"Unknown bitfield enum" }   /* not found */\
 };
 
-#ifdef CONFIG_MACH_ASUS_SDM660
 #define TFA9872_BITNAMETABLE static tfaBfName_t Tfa9872BitNames[]= {\
    { 0x0, "powerdown"},    /* Powerdown selection                               , */\
    { 0x10, "reset"},    /* I2C Reset - Auto clear                            , */\
@@ -1142,7 +1139,6 @@ typedef enum nxpTfa9872BfEnumList {
    { 0xff07, "calibr_osc_delta_ndiv"},    /* Calibration data for OSC1M, signed number representation, */\
    { 0xffff,"Unknown bitfield enum" }    /* not found */\
 };
-#endif /* CONFIG_MACH_ASUS_X00TD */
 
 enum TFA9872_irq {
 	TFA9872_irq_stvdds = 0,

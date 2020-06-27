@@ -1,7 +1,7 @@
 #
 # Novatek NT36xxx touchscreen driver configuration
 #
-config TOUCHSCREEN_NT36xxx_X01BD
+config TOUCHSCREEN_NT36xxx
 	bool "Novatek NT36xxx"
 	default n
 	help

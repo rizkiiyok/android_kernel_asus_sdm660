@@ -32,14 +32,14 @@
 #include <linux/regulator/of_regulator.h>
 #include <linux/input/qpnp-power-on.h>
 #include <linux/power_supply.h>
-#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
+#ifdef CONFIG_MACH_ASUS_SDM660
 #include <linux/timer.h>
 
 static struct timer_list tm;
 
 struct timer_data {
-	struct qpnp_pon *pon;
-	struct qpnp_pon_config *cfg;
+    struct qpnp_pon *pon;
+    struct qpnp_pon_config *cfg;
 } timer_data;
 #endif
 
@@ -1281,7 +1281,7 @@ qpnp_pon_config_input(struct qpnp_pon *pon,  struct qpnp_pon_config *cfg)
 	return 0;
 }
 
-#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
+#ifdef CONFIG_MACH_ASUS_SDM660
 static int
 qpnp_config_reset_reg(struct qpnp_pon *pon, struct qpnp_pon_config *cfg)
 {
@@ -1352,24 +1352,24 @@ qpnp_config_reset_reg(struct qpnp_pon *pon, struct qpnp_pon_config *cfg)
 
 static void timer_func(unsigned long data)
 {
-	timer_data.cfg->s1_timer = 4480;
-	timer_data.cfg->s2_timer = 2000;
-	timer_data.cfg->s2_type = 7;
-	qpnp_config_reset_reg(timer_data.pon, timer_data.cfg);
+    timer_data.cfg->s1_timer = 4480;
+    timer_data.cfg->s2_timer = 2000;
+    timer_data.cfg->s2_type = 7;
+    qpnp_config_reset_reg(timer_data.pon ,timer_data.cfg);
 }
 
 static void start_timer(struct qpnp_pon *pon,  struct qpnp_pon_config *cfg)
 {
-	timer_data.pon = pon;
-	timer_data.cfg = cfg;
-	setup_timer(&tm, timer_func, 0);
-	init_timer(&tm);
-	tm.data = 0;
-	tm.expires = jiffies + 60 * HZ;
-	tm.function = timer_func;
-	add_timer(&tm);
+    timer_data.pon = pon;
+    timer_data.cfg = cfg;
+    setup_timer(&tm, timer_func, 0);
+    init_timer(&tm);
+    tm.data = 0;
+    tm.expires = jiffies + 60 * HZ;
+    tm.function = timer_func;
+    add_timer(&tm);
 }
-#endif /* CONFIG_MACH_ASUS_X00TD */
+#endif
 
 static int qpnp_pon_config_init(struct qpnp_pon *pon)
 {
@@ -1721,7 +1721,7 @@ static int qpnp_pon_config_init(struct qpnp_pon *pon)
 			goto unreg_input_dev;
 		}
 
-#if defined(CONFIG_MACH_ASUS_X00TD) || defined(CONFIG_MACH_ASUS_X01BD)
+#ifdef CONFIG_MACH_ASUS_SDM660
 		if (cfg->pon_type == PON_KPDPWR)
 			start_timer(pon, cfg);
 #endif

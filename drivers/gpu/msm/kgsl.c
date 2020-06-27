@@ -459,10 +459,6 @@ static void kgsl_mem_entry_detach_process(struct kgsl_mem_entry *entry)
 
 	type = kgsl_memdesc_usermem_type(&entry->memdesc);
 	entry->priv->stats[type].cur -= entry->memdesc.size;
-
-	if (type != KGSL_MEM_ENTRY_ION)
-		entry->priv->gpumem_mapped -= entry->memdesc.mapsize;
-
 	spin_unlock(&entry->priv->mem_lock);
 
 	kgsl_mmu_put_gpuaddr(&entry->memdesc);
@@ -1415,6 +1411,45 @@ long kgsl_ioctl_device_getproperty(struct kgsl_device_private *dev_priv,
 		kgsl_context_put(context);
 		break;
 	}
+	case KGSL_PROP_SECURE_BUFFER_ALIGNMENT:
+	{
+		unsigned int align;
+
+		if (param->sizebytes != sizeof(unsigned int)) {
+			result = -EINVAL;
+			break;
+		}
+		/*
+		 * XPUv2 impose the constraint of 1MB memory alignment,
+		 * on the other hand Hypervisor does not have such
+		 * constraints. So driver should fulfill such
+		 * requirements when allocating secure memory.
+		 */
+		align = MMU_FEATURE(&dev_priv->device->mmu,
+				KGSL_MMU_HYP_SECURE_ALLOC) ? PAGE_SIZE : SZ_1M;
+
+		if (copy_to_user(param->value, &align, sizeof(align)))
+			result = -EFAULT;
+
+		break;
+	}
+	case KGSL_PROP_SECURE_CTXT_SUPPORT:
+	{
+		unsigned int secure_ctxt;
+
+		if (param->sizebytes != sizeof(unsigned int)) {
+			result = -EINVAL;
+			break;
+		}
+
+		secure_ctxt = dev_priv->device->mmu.secured ? 1 : 0;
+
+		if (copy_to_user(param->value, &secure_ctxt,
+				sizeof(secure_ctxt)))
+			result = -EFAULT;
+
+		break;
+	}
 	default:
 		if (is_compat_task())
 			result = dev_priv->device->ftbl->getproperty_compat(
@@ -2122,7 +2157,8 @@ static int memdesc_sg_virt(struct kgsl_memdesc *memdesc, struct file *vmfile)
 
 	if (ret == 0) {
 		npages = get_user_pages(current, current->mm, memdesc->useraddr,
-					sglen, write ? FOLL_WRITE : 0, pages, NULL);
+					sglen, write ? FOLL_WRITE : 0,
+					pages, NULL);
 		ret = (npages < 0) ? (int)npages : 0;
 	}
 	up_read(&current->mm->mmap_sem);
@@ -4201,18 +4237,13 @@ static int
 kgsl_gpumem_vm_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
 	struct kgsl_mem_entry *entry = vma->vm_private_data;
-	int ret;
 
 	if (!entry)
 		return VM_FAULT_SIGBUS;
 	if (!entry->memdesc.ops || !entry->memdesc.ops->vmfault)
 		return VM_FAULT_SIGBUS;
 
-	ret = entry->memdesc.ops->vmfault(&entry->memdesc, vma, vmf);
-	if ((ret == 0) || (ret == VM_FAULT_NOPAGE))
-		entry->priv->gpumem_mapped += PAGE_SIZE;
-
-	return ret;
+	return entry->memdesc.ops->vmfault(&entry->memdesc, vma, vmf);
 }
 
 static void
@@ -4941,7 +4972,7 @@ static void kgsl_core_exit(void)
 static int __init kgsl_core_init(void)
 {
 	int result = 0;
-	struct sched_param param = { .sched_priority = 2 };
+	struct sched_param param = { .sched_priority = 6 };
 
 	/* alloc major and minor device numbers */
 	result = alloc_chrdev_region(&kgsl_driver.major, 0, KGSL_DEVICE_MAX,

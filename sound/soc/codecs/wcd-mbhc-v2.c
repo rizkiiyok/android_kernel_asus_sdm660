@@ -69,8 +69,6 @@ enum wcd_mbhc_cs_mb_en_flag {
 
 #ifdef CONFIG_MACH_ASUS_SDM660
 static int hph_state;
-
-static bool wcd_swch_level_remove(struct wcd_mbhc *mbhc);
 #endif
 
 static void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
@@ -83,7 +81,6 @@ static void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 	else
 		hph_state = 0;
 #endif
-
 	snd_soc_jack_report(jack, status, mask);
 }
 
@@ -372,9 +369,6 @@ out_micb_en:
 			/* Disable cs, pullup & enable micbias */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
 		else
-#ifdef CONFIG_MACH_ASUS_SDM660
-		if (!wcd_swch_level_remove(mbhc))
-#endif
 			/* Disable micbias, pullup & enable cs */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_CS);
 		mutex_unlock(&mbhc->hphl_pa_lock);
@@ -393,9 +387,6 @@ out_micb_en:
 			/* Disable cs, pullup & enable micbias */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
 		else
-#ifdef CONFIG_MACH_ASUS_SDM660
-		if (!wcd_swch_level_remove(mbhc))
-#endif
 			/* Disable micbias, pullup & enable cs */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_CS);
 		mutex_unlock(&mbhc->hphr_pa_lock);
@@ -408,9 +399,6 @@ out_micb_en:
 			/* Disable cs, pullup & enable micbias */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
 		else
-#ifdef CONFIG_MACH_ASUS_SDM660
-		if (!wcd_swch_level_remove(mbhc))
-#endif
 			/* Disable micbias, enable pullup & cs */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_PULLUP);
 		break;
@@ -421,9 +409,6 @@ out_micb_en:
 			/* Disable cs, pullup & enable micbias */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
 		else
-#ifdef CONFIG_MACH_ASUS_SDM660
-		if (!wcd_swch_level_remove(mbhc))
-#endif
 			/* Disable micbias, enable pullup & cs */
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_PULLUP);
 		break;
@@ -1600,11 +1585,6 @@ static void wcd_mbhc_detect_plug_type(struct wcd_mbhc *mbhc)
 	wcd_schedule_hs_detect_plug(mbhc, &mbhc->correct_plug_swch);
 	pr_debug("%s: leave\n", __func__);
 }
-
-#ifdef CONFIG_MACH_ASUS_SDM660
-int hph_ext_en_gpio = -1;
-int hph_ext_sw_gpio = -1;
-#endif
 
 static void wcd_mbhc_swch_irq_handler(struct wcd_mbhc *mbhc)
 {
@@ -2838,15 +2818,15 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_codec *codec,
 		      bool impedance_det_en)
 {
 	int ret = 0;
+#ifdef CONFIG_MACH_ASUS_SDM660
+	int ret_hp = 0;
+#endif
 	int hph_swh = 0;
 	int gnd_swh = 0;
 	u32 hph_moist_config[3];
 	struct snd_soc_card *card = codec->component.card;
 	const char *hph_switch = "qcom,msm-mbhc-hphl-swh";
 	const char *gnd_switch = "qcom,msm-mbhc-gnd-swh";
-#ifdef CONFIG_MACH_ASUS_SDM660
-	int ret_hp = 0;
-#endif
 
 	pr_debug("%s: enter\n", __func__);
 
@@ -3043,7 +3023,7 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_codec *codec,
 	}
 
 #ifdef CONFIG_MACH_ASUS_SDM660
-	ret_hp = sysfs_create_file(&card->dev->kobj, &dev_attr_hp_state.attr);
+	ret_hp = sysfs_create_file(&card->dev->kobj,&dev_attr_hp_state.attr);
 #endif
 
 	pr_debug("%s: leave ret %d\n", __func__, ret);

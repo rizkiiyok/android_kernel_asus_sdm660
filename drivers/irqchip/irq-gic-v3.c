@@ -25,6 +25,7 @@
 #include <linux/percpu.h>
 #include <linux/slab.h>
 #include <linux/module.h>
+#include <linux/wakeup_reason.h>
 
 #include <linux/irqchip.h>
 #include <linux/irqchip/arm-gic-v3.h>
@@ -442,6 +443,7 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 		else if (desc->action && desc->action->name)
 			name = desc->action->name;
 
+		log_base_wakeup_reason(irq);
 		pr_warn("%s: %d triggered %s\n", __func__, irq, name);
 	}
 }
@@ -500,9 +502,6 @@ static asmlinkage void __exception_irq_entry gic_handle_irq(struct pt_regs *regs
 	do {
 		irqnr = gic_read_iar();
 
-#ifdef CONFIG_MACH_ASUS_X00TD
-		uncached_logk(LOGK_IRQ, (void *)(uintptr_t)irqnr);
-#endif
 		if (likely(irqnr > 15 && irqnr < 1020) || irqnr >= 8192) {
 			int err;
 			uncached_logk(LOGK_IRQ, (void *)(uintptr_t)irqnr);

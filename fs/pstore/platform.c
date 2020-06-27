@@ -36,6 +36,7 @@
 #include <linux/hardirq.h>
 #include <linux/jiffies.h>
 #include <linux/workqueue.h>
+#include <linux/vmalloc.h>
 
 #include "internal.h"
 
@@ -307,10 +308,6 @@ static void pstore_dump(struct kmsg_dumper *dumper,
 		bool compressed;
 		size_t total_len;
 
-#ifdef CONFIG_MACH_ASUS_X00TD
-		big_oops_buf = NULL;
-#endif
-
 		if (big_oops_buf && is_locked) {
 			dst = big_oops_buf;
 			hsize = sprintf(dst, "%s#%d Part%u\n", why,
@@ -363,9 +360,6 @@ static void pstore_dump(struct kmsg_dumper *dumper,
 
 static struct kmsg_dumper pstore_dumper = {
 	.dump = pstore_dump,
-#ifdef CONFIG_MACH_ASUS_X00TD
-	.name = "pstore_ramoops",
-#endif
 };
 
 /*
@@ -587,7 +581,7 @@ void pstore_get_records(int quiet)
 							big_oops_buf_sz);
 
 			if (unzipped_len > 0) {
-				kfree(buf);
+				vfree(buf);
 				buf = big_oops_buf;
 				size = unzipped_len;
 				compressed = false;
@@ -601,7 +595,7 @@ void pstore_get_records(int quiet)
 				  compressed, (size_t)size, time, psi);
 		if (unzipped_len < 0) {
 			/* Free buffer other than big oops */
-			kfree(buf);
+			vfree(buf);
 			buf = NULL;
 		} else
 			unzipped_len = -1;

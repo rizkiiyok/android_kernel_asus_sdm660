@@ -3230,7 +3230,7 @@ cifs_read(struct file *file, char *read_data, size_t read_size, loff_t *offset)
 			 * than it negotiated since it will refuse the read
 			 * then.
 			 */
-			if ((tcon->ses) && !(tcon->ses->capabilities &
+			if (!(tcon->ses->capabilities &
 				tcon->ses->server->vals->cap_large_files)) {
 				current_read_size = min_t(uint,
 					current_read_size, CIFSMaxBufSize);
@@ -3451,13 +3451,13 @@ readpages_get_pages(struct address_space *mapping, struct list_head *page_list,
 	 * should have access to this page, we're safe to simply set
 	 * PG_locked without checking it first.
 	 */
-	__set_page_locked(page);
+	__SetPageLocked(page);
 	rc = add_to_page_cache_locked(page, mapping,
 				      page->index, gfp);
 
 	/* give up if we can't stick it in the cache */
 	if (rc) {
-		__clear_page_locked(page);
+		__ClearPageLocked(page);
 		return rc;
 	}
 
@@ -3478,9 +3478,9 @@ readpages_get_pages(struct address_space *mapping, struct list_head *page_list,
 		if (*bytes + PAGE_CACHE_SIZE > rsize)
 			break;
 
-		__set_page_locked(page);
+		__SetPageLocked(page);
 		if (add_to_page_cache_locked(page, mapping, page->index, gfp)) {
-			__clear_page_locked(page);
+			__ClearPageLocked(page);
 			break;
 		}
 		list_move_tail(&page->lru, tmplist);

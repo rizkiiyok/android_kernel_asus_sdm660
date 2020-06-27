@@ -953,7 +953,7 @@ struct file_handle {
 	__u32 handle_bytes;
 	int handle_type;
 	/* file identifier */
-	unsigned char f_handle[0];
+	unsigned char f_handle[];
 };
 
 static inline struct file *get_file(struct file *f)
@@ -1659,6 +1659,7 @@ typedef int (*filldir_t)(struct dir_context *, const char *, int, loff_t, u64,
 struct dir_context {
 	const filldir_t actor;
 	loff_t pos;
+	bool romnt;
 };
 
 struct block_device_operations;
@@ -3141,5 +3142,8 @@ static inline bool dir_relax(struct inode *inode)
 
 extern bool path_noexec(const struct path *path);
 extern void inode_nohighmem(struct inode *inode);
+
+int vfs_ioc_setflags_prepare(struct inode *inode, unsigned int oldflags,
+			     unsigned int flags);
 
 #endif /* _LINUX_FS_H */

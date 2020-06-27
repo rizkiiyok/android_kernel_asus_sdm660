@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2016, 2019 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2016,2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -102,7 +102,8 @@ static enum msm_vidc_pixel_depth get_hal_pixel_depth(u32 hfi_bit_depth)
 static inline int validate_pkt_size(u32 rem_size, u32 msg_size)
 {
 	if (rem_size < msg_size) {
-		dprintk(VIDC_ERR, "%s: bad_pkt_size: %d\n", __func__, rem_size);
+		dprintk(VIDC_ERR, "%s: bad_pkt_size: %d\n",
+			__func__, rem_size);
 		return false;
 	}
 	return true;
@@ -1843,12 +1844,8 @@ static int hfi_process_session_rel_buf_done(u32 device_id,
 	cmd_done.size = sizeof(struct msm_vidc_cb_cmd_done);
 	cmd_done.session_id = (void *)(uintptr_t)pkt->session_id;
 	cmd_done.status = hfi_map_err_status(pkt->error_type);
-	if (pkt->rg_buffer_info) {
-		cmd_done.data.buffer_info.buffer_addr = *pkt->rg_buffer_info;
-		cmd_done.size = sizeof(struct hal_buffer_info);
-	} else {
-		dprintk(VIDC_ERR, "invalid payload in rel_buff_done\n");
-	}
+	cmd_done.data.buffer_info.buffer_addr = *pkt->rg_buffer_info;
+	cmd_done.size = sizeof(struct hal_buffer_info);
 
 	*info = (struct msm_vidc_cb_info) {
 		.response_type =  HAL_SESSION_RELEASE_BUFFER_DONE,

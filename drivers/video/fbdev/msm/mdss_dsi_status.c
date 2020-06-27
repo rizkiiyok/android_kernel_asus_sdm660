@@ -30,9 +30,7 @@
 #include "mdss_panel.h"
 #include "mdss_mdp.h"
 
-#if defined(CONFIG_MACH_ASUS_X00TD)
-#define STATUS_CHECK_INTERVAL_MS 500
-#elif defined(CONFIG_MACH_ASUS_X01BD)
+#ifdef CONFIG_MACH_ASUS_X00TD
 #define STATUS_CHECK_INTERVAL_MS 2000
 #else
 #define STATUS_CHECK_INTERVAL_MS 5000
@@ -264,7 +262,7 @@ int __init mdss_dsi_status_init(void)
 		return -ENOMEM;
 	}
 
-#ifdef CONFIG_MACH_ASUS_X01BD
+#ifdef CONFIG_MACH_ASUS_SDM660
 	pstatus_data->is_first_check = 1;
 #endif
 	pstatus_data->fb_notifier.notifier_call = fb_event_callback;

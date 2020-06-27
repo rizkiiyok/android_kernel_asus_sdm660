@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -3307,12 +3307,14 @@ int mdss_mdp_overlay_vsync_ctrl(struct msm_fb_data_type *mfd, int en)
 		goto end;
 	}
 
+	mdp5_data->vsync_en = en;
+
 	if (!ctl->panel_data->panel_info.cont_splash_enabled
 		&& (!mdss_mdp_ctl_is_power_on(ctl) ||
 		mdss_panel_is_power_on_ulp(ctl->power_state))) {
 		pr_debug("fb%d vsync pending first update en=%d, ctl power state:%d\n",
 				mfd->index, en, ctl->power_state);
-		rc = -EPERM;
+		rc = 0;
 		goto end;
 	}
 
@@ -5252,6 +5254,7 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 		sorted_ovs = kzalloc(num_ovs * sizeof(*ip_ovs), GFP_KERNEL);
 		if (!sorted_ovs) {
 			pr_err("error allocating ovlist mem\n");
+			mutex_unlock(&mdp5_data->ov_lock);
 			return -ENOMEM;
 		}
 		memcpy(sorted_ovs, ip_ovs, num_ovs * sizeof(*ip_ovs));
@@ -5259,6 +5262,7 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 		if (ret) {
 			pr_err("src_split_sort failed. ret=%d\n", ret);
 			kfree(sorted_ovs);
+			mutex_unlock(&mdp5_data->ov_lock);
 			return ret;
 		}
 	}
@@ -5759,6 +5763,15 @@ static int mdss_mdp_overlay_on(struct msm_fb_data_type *mfd)
 	}
 
 panel_on:
+	if (mdp5_data->vsync_en) {
+		if ((ctl) && (ctl->ops.add_vsync_handler)) {
+			pr_info("reenabling vsync for fb%d\n", mfd->index);
+			mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_ON);
+			rc = ctl->ops.add_vsync_handler(ctl,
+					 &ctl->vsync_handler);
+			mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF);
+		}
+	}
 	if (IS_ERR_VALUE(rc)) {
 		pr_err("Failed to turn on fb%d\n", mfd->index);
 		mdss_mdp_overlay_off(mfd);
@@ -6600,6 +6613,7 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 		}
 	}
 	mfd->mdp_sync_pt_data.async_wait_fences = true;
+	mdp5_data->vsync_en = false;
 
 	pm_runtime_set_suspended(&mfd->pdev->dev);
 	pm_runtime_enable(&mfd->pdev->dev);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017, 2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -70,10 +70,10 @@
 #define LC_INIT_MESSAGE_ID               9
 #define LC_SEND_L_PRIME_MESSAGE_ID      10
 #define SKE_SEND_EKS_MESSAGE_ID         11
-#define REPEATER_AUTH_SEND_RECEIVERID_LIST_MESSAGE_ID 12
-#define REPEATER_AUTH_SEND_ACK_MESSAGE_ID      15
-#define REPEATER_AUTH_STREAM_MANAGE_MESSAGE_ID 16
-#define REPEATER_AUTH_STREAM_READY_MESSAGE_ID  17
+#define REP_SEND_RECV_ID_LIST_ID 12
+#define REP_SEND_ACK_ID      15
+#define REP_STREAM_MANAGE_ID     16
+#define REP_STREAM_READY_ID  17
 #define SKE_SEND_TYPE_ID                       18
 #define HDCP2P2_MAX_MESSAGES                   19
 
@@ -198,18 +198,18 @@ static const struct hdcp_msg_data hdcp_msg_lookup[HDCP2P2_MAX_MESSAGES] = {
 	[SKE_SEND_TYPE_ID] = { 1,
 		{ {"type", 0x69494, 1} },
 		0 },
-	[REPEATER_AUTH_SEND_RECEIVERID_LIST_MESSAGE_ID] = { 4,
+	[REP_SEND_RECV_ID_LIST_ID] = { 4,
 		{ {"RxInfo", 0x69330, 2}, {"seq_num_V", 0x69332, 3},
 			{"V'", 0x69335, 16}, {"ridlist", 0x69345, 155} },
 		(1 << 0) },
-	[REPEATER_AUTH_SEND_ACK_MESSAGE_ID] = { 1,
+	[REP_SEND_ACK_ID] = { 1,
 		{ {"V", 0x693E0, 16} },
 		0 },
-	[REPEATER_AUTH_STREAM_MANAGE_MESSAGE_ID] = { 3,
+	[REP_STREAM_MANAGE_ID] = { 3,
 		{ {"seq_num_M", 0x693F0, 3}, {"k", 0x693F3, 2},
 			{"streamID_Type", 0x693F5, 126} },
 		0 },
-	[REPEATER_AUTH_STREAM_READY_MESSAGE_ID] = { 1,
+	[REP_STREAM_READY_ID] = { 1,
 		{ {"M'", 0x69473, 32} },
 		0 }
 };
@@ -688,19 +688,19 @@ static int hdcp_lib_get_next_message(struct hdcp_lib_handle *handle,
 			handle->device_type == HDCP_TXMTR_DP)
 			return SKE_SEND_TYPE_ID;
 	case SKE_SEND_TYPE_ID:
-	case REPEATER_AUTH_STREAM_READY_MESSAGE_ID:
-	case REPEATER_AUTH_SEND_ACK_MESSAGE_ID:
+	case REP_STREAM_READY_ID:
+	case REP_SEND_ACK_ID:
 		if (!handle->repeater_flag)
 			return INVALID_MESSAGE_ID;
 
 		if (data->cmd == HDMI_HDCP_WKUP_CMD_SEND_MESSAGE)
-			return REPEATER_AUTH_STREAM_MANAGE_MESSAGE_ID;
+			return REP_STREAM_MANAGE_ID;
 		else
-			return REPEATER_AUTH_SEND_RECEIVERID_LIST_MESSAGE_ID;
-	case REPEATER_AUTH_SEND_RECEIVERID_LIST_MESSAGE_ID:
-		return REPEATER_AUTH_SEND_ACK_MESSAGE_ID;
-	case REPEATER_AUTH_STREAM_MANAGE_MESSAGE_ID:
-		return REPEATER_AUTH_STREAM_READY_MESSAGE_ID;
+			return REP_SEND_RECV_ID_LIST_ID;
+	case REP_SEND_RECV_ID_LIST_ID:
+		return REP_SEND_ACK_ID;
+	case REP_STREAM_MANAGE_ID:
+		return REP_STREAM_READY_ID;
 	default:
 		pr_err("Uknown message ID (%d)", handle->last_msg);
 		return -EINVAL;
@@ -720,7 +720,7 @@ static void hdcp_lib_wait_for_response(struct hdcp_lib_handle *handle,
 	case AKE_SEND_PAIRING_INFO_MESSAGE_ID:
 		handle->wait_timeout = HZ / 4;
 		break;
-	case REPEATER_AUTH_SEND_RECEIVERID_LIST_MESSAGE_ID:
+	case REP_SEND_RECV_ID_LIST_ID:
 		if (!handle->authenticated)
 			handle->wait_timeout = HZ * 3;
 		else
@@ -1903,7 +1903,7 @@ static void hdcp_lib_msg_sent(struct hdcp_lib_handle *handle)
 			cdata.cmd = HDMI_HDCP_WKUP_CMD_LINK_POLL;
 		}
 		break;
-	case REPEATER_AUTH_SEND_ACK_MESSAGE_ID:
+	case REP_SEND_ACK_ID:
 		pr_debug("Repeater authentication successful\n");
 
 		if (handle->update_stream) {
@@ -2038,12 +2038,13 @@ static void hdcp_lib_timeout(struct hdcp_lib_handle *handle)
 	}
 
 	/*
-	 * if the response contains LC_Init message
-	 * send the message again to TZ
+	 * if the response contains LC_Init OR RepeaterAuth_Stream_Manage
+	 * message send the message again to the sink as this means that
+	 * TZ would like to try again
 	 */
 	if ((rsp_buf->commandid == HDCP_TXMTR_PROCESS_RECEIVED_MESSAGE) &&
-	    ((int)rsp_buf->message[0] == LC_INIT_MESSAGE_ID) &&
-	    (rsp_buf->msglen == LC_INIT_MESSAGE_SIZE)) {
+	    ((int)rsp_buf->message[0] == LC_INIT_MESSAGE_ID ||
+		 (int)rsp_buf->message[0] == REP_STREAM_MANAGE_ID)) {
 		if (!atomic_read(&handle->hdcp_off)) {
 			/* keep local copy of TZ response */
 			memset(handle->listener_buf, 0, MAX_TX_MESSAGE_SIZE);
@@ -2082,6 +2083,10 @@ static void hdcp_lib_clean(struct hdcp_lib_handle *handle)
 	}
 
 	handle->authenticated = false;
+
+	/* AV mute the sink first to avoid artifacts */
+	if (handle->client_ops->mute_sink)
+		handle->client_ops->mute_sink(handle->client_ctx);
 
 	hdcp_lib_txmtr_deinit(handle);
 	if (!handle->legacy_app)
@@ -2193,7 +2198,7 @@ static void hdcp_lib_msg_recvd(struct hdcp_lib_handle *handle)
 				  QSEECOM_ALIGN(sizeof
 						(struct hdcp_rcvd_msg_rsp)));
 
-	if (msg[0] == REPEATER_AUTH_SEND_RECEIVERID_LIST_MESSAGE_ID) {
+	if (msg[0] == REP_SEND_RECV_ID_LIST_ID) {
 		if ((msg[2] & HDCP2_0_REPEATER_DOWNSTREAM) ||
 		   (msg[2] & HDCP1_DEVICE_DOWNSTREAM))
 			handle->non_2p2_present = true;
@@ -2212,7 +2217,7 @@ static void hdcp_lib_msg_recvd(struct hdcp_lib_handle *handle)
 		goto exit;
 	}
 
-	if ((msg[0] == REPEATER_AUTH_STREAM_READY_MESSAGE_ID) &&
+	if ((msg[0] == REP_STREAM_READY_ID) &&
 	    (rc == 0) && (rsp_buf->status == 0)) {
 		pr_debug("Got Auth_Stream_Ready, nothing sent to rx\n");
 
@@ -2456,10 +2461,6 @@ int hdcp1_validate_receiver_ids(struct hdcp_srm_device_id_t *device_ids,
 	uint32_t rbuf_len;
 	int i = 0;
 	struct qseecom_handle *hdcp1_srmhandle;
-
-	/* do not proceed further if no device connected */
-	if (device_id_cnt == 0)
-		goto end;
 
 	/* If client has not been registered return */
 	if (!hdcp1_supported || !hdcp1_handle)
