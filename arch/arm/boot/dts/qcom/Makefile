@@ -212,7 +212,9 @@ endif
 
 dtb-$(CONFIG_ARCH_MSMHAMSTER) += msmhamster-rumi.dtb
 
-ifeq ($(CONFIG_MACH_ASUS_SDM660),y)
+ifeq ($(CONFIG_X01BD_GAMING),y)
+dtb-$(CONFIG_MACH_ASUS_X01BD) += sdm660-qrd-X01BD-gaming.dtb
+else ifeq ($(CONFIG_MACH_ASUS_SDM660),y)
 dtb-$(CONFIG_MACH_ASUS_X01BD) += sdm660-qrd-X01BD.dtb
 else
 dtb-$(CONFIG_ARCH_SDM660) += sdm660-sim.dtb \
