@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2014, 2016, 2018-2019 The Linux Foundation.
+/* Copyright (c) 2010-2014, 2016, 2018-2020 The Linux Foundation.
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1117,10 +1117,12 @@ static int apr_probe(struct platform_device *pdev)
 	if (!apr_reset_workqueue)
 		return -ENOMEM;
 
+#ifdef CONFIG_IPC_LOGGING
 	apr_pkt_ctx = ipc_log_context_create(APR_PKT_IPC_LOG_PAGE_CNT,
 						"apr", 0);
 	if (!apr_pkt_ctx)
 		pr_err("%s: Unable to create ipc log context\n", __func__);
+#endif
 
 	is_initial_modem_boot = true;
 	is_initial_adsp_boot = true;

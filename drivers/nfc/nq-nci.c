@@ -13,7 +13,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>
-#include <linux/proc_fs.h>
 #include <linux/reboot.h>
 #include <linux/slab.h>
 #include <linux/irq.h>
@@ -46,13 +45,8 @@ static const struct of_device_id msm_match_table[] = {
 
 MODULE_DEVICE_TABLE(of, msm_match_table);
 
-#define PAGESIZE 512
 #define MAX_BUFFER_SIZE			(320)
-#ifdef CONFIG_MACH_ASUS_SDM660
-#define WAKEUP_SRC_TIMEOUT		(5000)
-#else
 #define WAKEUP_SRC_TIMEOUT		(2000)
-#endif
 #define MAX_RETRY_COUNT			3
 
 struct nqx_dev {
@@ -85,8 +79,6 @@ struct nqx_dev {
 	u8 *kbuf;
 	struct nqx_platform_data *pdata;
 };
-
-static bool has_nfc;
 
 static int nfcc_reboot(struct notifier_block *notifier, unsigned long val,
 			void *v);
@@ -155,29 +147,6 @@ static irqreturn_t nqx_dev_irq_handler(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
-
-static ssize_t proc_has_nfc_show(struct file *file, char __user *user_buf,
-						size_t count, loff_t *ppos)
-{
-	int ret = 0;
-	char page[PAGESIZE] = {0};
-
-	if (has_nfc)
-		snprintf(page, PAGESIZE-1, "%s", "SUPPORTED");
-	else
-		snprintf(page, PAGESIZE-1, "%s", "NOT SUPPORTED");
-
-	ret = simple_read_from_buffer(user_buf, count, ppos, page,
-					strlen(page));
-	return ret;
-}
-
-static struct proc_dir_entry *has_nfc_proc = NULL;
-static const struct file_operations proc_has_nfc_fops = {
-	.read  = proc_has_nfc_show,
-	.open  = simple_open,
-	.owner = THIS_MODULE,
-};
 
 static ssize_t nfc_read(struct file *filp, char __user *buf,
 					size_t count, loff_t *offset)
@@ -493,9 +462,7 @@ int nfc_ioctl_power_states(struct file *filp, unsigned long arg)
 		 * interrupts to avoid spurious notifications to upper
 		 * layers.
 		 */
-#ifndef CONFIG_MACH_ASUS_SDM660
 		nqx_disable_irq(nqx_dev);
-#endif
 		dev_dbg(&nqx_dev->client->dev,
 			"gpio_set_value disable: %s: info: %p\n",
 			__func__, nqx_dev);
@@ -547,10 +514,6 @@ int nfc_ioctl_power_states(struct file *filp, unsigned long arg)
 				return -EBUSY; /* Device or resource busy */
 			}
 		}
-#ifdef CONFIG_MACH_ASUS_SDM660
-		if (!nqx_dev->irq_enabled)
-			nqx_enable_irq(nqx_dev);
-#endif
 		gpio_set_value(nqx_dev->en_gpio, 1);
 		usleep_range(10000, 10100);
 		if (gpio_is_valid(nqx_dev->firm_gpio)) {
@@ -796,8 +759,6 @@ err_nfcc_hw_check:
 	dev_err(&client->dev,
 		"%s: - NFCC HW not available\n", __func__);
 done:
-	// When Success the ret must be 0
-	has_nfc = !ret;
 	return ret;
 }
 
@@ -1109,20 +1070,12 @@ static int nqx_probe(struct i2c_client *client,
 	 *
 	 */
 	r = nfcc_hw_check(client, nqx_dev);
-#ifndef CONFIG_MACH_ASUS_SDM660
 	if (r) {
 		/* make sure NFCC is not enabled */
 		gpio_set_value(platform_data->en_gpio, 0);
 		/* We don't think there is hardware switch NFC OFF */
 		goto err_request_hw_check_failed;
 	}
-#endif
-
-	/* Show if hardware supports nfc. */
-	has_nfc_proc = proc_create("NFC_CHECK", 0444, NULL, &proc_has_nfc_fops);
-	if (has_nfc_proc == NULL)
-		dev_err(&client->dev, "%s: Couldn't create proc entry, %d\n",
-			__func__);
 
 	/* Register reboot notifier here */
 	r = register_reboot_notifier(&nfcc_notifier);

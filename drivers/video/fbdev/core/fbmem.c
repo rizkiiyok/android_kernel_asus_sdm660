@@ -2,6 +2,7 @@
  *  linux/drivers/video/fbmem.c
  *
  *  Copyright (C) 1994 Martin Schaller
+ *  Copyright (C) 2019 XiaoMi, Inc.
  *
  *	2001 - Documented with DocBook
  *	- Brad Douglas <brad@neruo.com>
@@ -1061,12 +1062,20 @@ EXPORT_SYMBOL(fb_set_var);
 
 int
 fb_blank(struct fb_info *info, int blank)
-{	
+{
 	struct fb_event event;
 	int ret = -EINVAL, early_ret;
 
  	if (blank > FB_BLANK_POWERDOWN)
  		blank = FB_BLANK_POWERDOWN;
+
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
+	if (info->blank == blank) {
+		if (info->fbops->fb_blank)
+			ret = info->fbops->fb_blank(blank, info);
+		return ret;
+	}
+#endif
 
 	event.info = info;
 	event.data = &blank;
@@ -1087,13 +1096,14 @@ fb_blank(struct fb_info *info, int blank)
 			fb_notifier_call_chain(FB_R_EARLY_EVENT_BLANK, &event);
 	}
 
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
+	if (!ret)
+		info->blank = blank;
+#endif
+
  	return ret;
 }
 EXPORT_SYMBOL(fb_blank);
-
-#ifdef CONFIG_MACH_ASUS_X01BD
-bool lcd_suspend_flag = false;
-#endif
 
 static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg, struct file *file)
@@ -1224,12 +1234,6 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
 			return -ENODEV;
 		}
 		info->flags |= FBINFO_MISC_USEREVENT;
-#ifdef CONFIG_MACH_ASUS_X01BD
-		if (arg == FB_BLANK_POWERDOWN) {
-			lcd_suspend_flag = true;
-			pr_debug("[Display] FB_BLANK_POWERDOWN\n");
-		}
-#endif
 		ret = fb_blank(info, arg);
 		info->flags &= ~FBINFO_MISC_USEREVENT;
 		unlock_fb_info(info);
@@ -1658,6 +1662,9 @@ static int do_register_framebuffer(struct fb_info *fb_info)
 		if (!registered_fb[i])
 			break;
 	fb_info->node = i;
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
+	fb_info->blank = -1;
+#endif
 	atomic_set(&fb_info->count, 1);
 	mutex_init(&fb_info->lock);
 	mutex_init(&fb_info->mm_lock);

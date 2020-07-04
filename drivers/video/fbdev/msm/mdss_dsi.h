@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -100,6 +101,9 @@ enum dsi_panel_bl_ctrl {
 	BL_PWM,
 	BL_WLED,
 	BL_DCS_CMD,
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	BL_I2C_CMD,
+#endif
 	UNKNOWN_CTRL,
 };
 
@@ -451,9 +455,6 @@ struct mdss_dsi_ctrl_pdata {
 	int irq_cnt;
 	int disp_te_gpio;
 	int rst_gpio;
-#ifdef CONFIG_MACH_ASUS_SDM660
-	int tp_rst_gpio;
-#endif
 	int disp_en_gpio;
 	int bklt_en_gpio;
 	bool bklt_en_gpio_invert;
@@ -496,15 +497,31 @@ struct mdss_dsi_ctrl_pdata {
 	struct mdss_intf_recovery *mdp_callback;
 	struct mdss_intf_ulp_clamp *clamp_handler;
 
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	struct dsi_panel_cmds CABC_on_cmds;
+	struct dsi_panel_cmds CABC_off_cmds;
+	struct dsi_panel_cmds CE_on_cmds;
+	struct dsi_panel_cmds CE_off_cmds;
+	struct dsi_panel_cmds cold_gamma_cmds;
+	struct dsi_panel_cmds warm_gamma_cmds;
+	struct dsi_panel_cmds default_gamma_cmds;
+	struct dsi_panel_cmds sRGB_on_cmds;
+	struct dsi_panel_cmds sRGB_off_cmds;
+	struct dsi_panel_cmds PM1_cmds;
+	struct dsi_panel_cmds PM2_cmds;
+	struct dsi_panel_cmds PM3_cmds;
+	struct dsi_panel_cmds PM4_cmds;
+	struct dsi_panel_cmds PM5_cmds;
+	struct dsi_panel_cmds PM6_cmds;
+	struct dsi_panel_cmds PM7_cmds;
+	struct dsi_panel_cmds PM8_cmds;
+#endif
 	struct dsi_panel_cmds on_cmds;
 	struct dsi_panel_cmds post_dms_on_cmds;
 	struct dsi_panel_cmds post_panel_on_cmds;
 	struct dsi_panel_cmds off_cmds;
 	struct dsi_panel_cmds lp_on_cmds;
 	struct dsi_panel_cmds lp_off_cmds;
-#ifdef CONFIG_MACH_ASUS_SDM660
-	struct dsi_panel_cmds esd_recover_cmds;
-#endif
 	struct dsi_panel_cmds status_cmds;
 	u32 *status_valid_params;
 	u32 *status_cmds_rlen;
@@ -597,15 +614,25 @@ struct mdss_dsi_ctrl_pdata {
 	bool update_phy_timing; /* flag to recalculate PHY timings */
 
 	bool phy_power_off;
+
+#ifdef CONFIG_MACH_MI
+	bool dsi_panel_off_mode;
+	int tp_rst_gpio;
+	u32 bklt_level;
+
+	struct dsi_panel_cmds dispparam_dimmingon_cmds;
+	struct dsi_panel_cmds displayoff_cmds;
+	struct dsi_panel_cmds displayon_cmds;
+
+	struct delayed_work cmds_work;
+	struct delayed_work panel_dead_report_work;
+#endif
 };
 
 struct dsi_status_data {
 	struct notifier_block fb_notifier;
 	struct delayed_work check_status;
 	struct msm_fb_data_type *mfd;
-#ifdef CONFIG_MACH_ASUS_SDM660
-	bool is_first_check;
-#endif
 };
 
 void mdss_dsi_read_hw_revision(struct mdss_dsi_ctrl_pdata *ctrl);
@@ -745,6 +772,11 @@ static inline const char *__mdss_dsi_pm_supply_node_name(
 	default:		return "???";
 	}
 }
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+void mdss_dsi_panel_cmds_send(struct mdss_dsi_ctrl_pdata *ctrl,
+			struct dsi_panel_cmds *pcmds, u32 flags);
+#endif
 
 static inline u32 mdss_dsi_get_hw_config(struct dsi_shared_data *sdata)
 {

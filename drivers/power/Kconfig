@@ -526,10 +526,5 @@ source "drivers/power/supply/Kconfig"
 
 endif # POWER_SUPPLY
 
-config FAST_CHARGING
-	bool "fast charging"
-	help
-	  Say Y here to enable fast charging for battery.
-
 source "drivers/power/avs/Kconfig"
 source "drivers/power/qcom/Kconfig"

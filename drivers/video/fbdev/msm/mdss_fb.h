@@ -1,4 +1,5 @@
 /* Copyright (c) 2008-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -287,10 +288,6 @@ struct msm_fb_data_type {
 	struct msm_fb_fps_info fps_info;
 	struct delayed_work idle_notify_work;
 
-#ifdef CONFIG_MACH_ASUS_X01BD
-	struct delayed_work early_unblank_work;
-	bool early_unblank_work_queued;
-#endif
 	bool atomic_commit_pending;
 
 	int op_enable;
@@ -343,6 +340,10 @@ struct msm_fb_data_type {
 	struct task_struct *disp_thread;
 	atomic_t commits_pending;
 	atomic_t kickoff_pending;
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
+	atomic_t resume_pending;
+	wait_queue_head_t resume_wait_q;
+#endif
 	wait_queue_head_t commit_wait_q;
 	wait_queue_head_t idle_wait_q;
 	wait_queue_head_t kickoff_wait_q;
