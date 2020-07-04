@@ -218,9 +218,4 @@ endchoice
 
 endif
 
-config X01BD_GAMING
-	bool "x01bd"
-	help
-	  Enable this if you active gaming mode but battery is not friendly.
-
 endmenu
