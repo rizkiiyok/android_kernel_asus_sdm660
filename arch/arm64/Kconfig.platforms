@@ -182,7 +182,6 @@ config ARCH_ZYNQMP
 	help
 	  This enables support for Xilinx ZynqMP Family
 
-
 config MACH_ASUS
 	bool "ASUS devices"
 	help
@@ -210,6 +209,12 @@ config MACH_ASUS_X01BD
 	help
 	  This enables support for ASUS ZenFone Max Pro (M2).
 endchoice
+
+config ANDROID_P
+	bool "ZenFone Max Pro (M2)"
+
+config ANDROID_Q
+	bool "ZenFone Max Pro (M2)"
 
 endif
 

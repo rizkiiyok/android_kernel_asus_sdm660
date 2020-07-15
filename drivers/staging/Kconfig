@@ -110,6 +110,12 @@ source "drivers/staging/wilc1000/Kconfig"
 
 source "drivers/staging/most/Kconfig"
 
+if ANDROID_P
 source "drivers/staging/qcacld-3.0/Kconfig"
+endif
+
+if ANDROID_Q
+source "drivers/staging/qcacld-3.0_ten/qcacld-3.0/Kconfig"
+endif
 
 endif # STAGING
