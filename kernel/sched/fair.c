@@ -3001,6 +3001,8 @@ struct cpu_select_env *env, struct cluster_cpu_stats *stats)
 	int i;
 	struct cpumask search_cpus;
 
+	extern int num_clusters;
+
 	while (!bitmap_empty(env->backup_list, num_clusters)) {
 		next = next_candidate(env->backup_list, 0, num_clusters);
 		__clear_bit(next->id, env->backup_list);
@@ -3023,6 +3025,8 @@ next_best_cluster(struct sched_cluster *cluster, struct cpu_select_env *env,
 					struct cluster_cpu_stats *stats)
 {
 	struct sched_cluster *next = NULL;
+
+	extern int num_clusters;
 
 	__clear_bit(cluster->id, env->candidate_list);
 
@@ -8906,7 +8910,15 @@ redo:
 		if (!can_migrate_task(p, env))
 			goto next;
 
-		load = task_h_load(p);
+		/*
+		 * Depending of the number of CPUs and tasks and the
+		 * cgroup hierarchy, task_h_load() can return a null
+		 * value. Make sure that env->imbalance decreases
+		 * otherwise detach_tasks() will stop only after
+		 * detaching up to loop_max tasks.
+		 */
+		load = max_t(unsigned long, task_h_load(p), 1);
+
 
 		if (sched_feat(LB_MIN) && load < 16 && !env->sd->nr_balance_failed)
 			goto next;
@@ -9310,9 +9322,16 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	    (max_capacity < capacity)) {
 		mcc->val = capacity;
 		mcc->cpu = cpu;
+#ifdef CONFIG_SCHED_DEBUG
+		raw_spin_unlock_irqrestore(&mcc->lock, flags);
+		printk_deferred(KERN_INFO "CPU%d: update max cpu_capacity %lu\n",
+				cpu, capacity);
+		goto skip_unlock;
+#endif
 	}
 	raw_spin_unlock_irqrestore(&mcc->lock, flags);
 
+skip_unlock: __attribute__ ((unused));
 	capacity *= scale_rt_capacity(cpu);
 	capacity >>= SCHED_CAPACITY_SHIFT;
 
@@ -10537,7 +10556,6 @@ redo:
 		 * correctly treated as an imbalance.
 		 */
 		env.flags |= LBF_ALL_PINNED;
-		env.loop_max  = min(sysctl_sched_nr_migrate, busiest->nr_running);
 
 more_balance:
 		raw_spin_lock_irqsave(&busiest->lock, flags);
@@ -10549,6 +10567,12 @@ more_balance:
 			env.flags &= ~LBF_ALL_PINNED;
 			goto no_move;
 		}
+
+		/*
+		 * Set loop_max when rq's lock is taken to prevent a race.
+		 */
+		env.loop_max = min(sysctl_sched_nr_migrate,
+							busiest->nr_running);
 
 		/*
 		 * cur_ld_moved - load moved in current iteration

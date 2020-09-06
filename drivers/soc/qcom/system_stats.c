@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, 2020, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -298,7 +298,6 @@ static int msm_rpmstats_probe(struct platform_device *pdev)
 	void __iomem *offset_addr = NULL;
 	struct resource res;
 	int i, ret = 0;
-	size_t master_name_len = 0;
 
 	if (!pdev)
 		return -EINVAL;
@@ -366,7 +365,7 @@ static int msm_rpmstats_probe(struct platform_device *pdev)
 	 * Read master names from DT
 	 */
 	for (i = 0; i < ss.num_masters; i++) {
-		const char *master_name = NULL;
+		const char *master_name;
 
 		of_property_read_string_index(pdev->dev.of_node,
 				"qcom,masters",
@@ -378,9 +377,8 @@ static int msm_rpmstats_probe(struct platform_device *pdev)
 			pr_err("%s:Failed to get memory\n", __func__);
 			return -ENOMEM;
 		}
-		master_name_len = strlen(master_name);
-		strlcpy(ss.master[i], master_name,
-					master_name_len + 1);
+		strscpy(ss.master[i], master_name,
+					sizeof(ss.master[i]));
 	}
 
 	dent = debugfs_create_file("system_stats", S_IRUGO, NULL,

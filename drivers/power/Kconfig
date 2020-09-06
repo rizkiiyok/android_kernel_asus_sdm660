@@ -526,5 +526,8 @@ source "drivers/power/supply/Kconfig"
 
 endif # POWER_SUPPLY
 
+config FORCE_FAST_CHARGE
+	bool "Fast charger"
+
 source "drivers/power/avs/Kconfig"
 source "drivers/power/qcom/Kconfig"

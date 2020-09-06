@@ -84,6 +84,10 @@ static inline int qpnp_pon_trigger_config(enum pon_trigger_source pon_src,
 {
 	return -ENODEV;
 }
+int qpnp_pon_wd_config(bool enable)
+{
+	return -ENODEV;
+}
 static inline int qpnp_pon_set_restart_reason(enum pon_restart_reason reason)
 {
 	return -ENODEV;

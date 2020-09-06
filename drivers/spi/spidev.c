@@ -89,11 +89,7 @@ struct spidev_data {
 static LIST_HEAD(device_list);
 static DEFINE_MUTEX(device_list_lock);
 
-#ifdef CONFIG_MACH_LONGCHEER
-static unsigned bufsiz = 4096 * 8;
-#else
 static unsigned bufsiz = 4096;
-#endif
 module_param(bufsiz, uint, S_IRUGO);
 MODULE_PARM_DESC(bufsiz, "data bytes in biggest supported SPI message");
 
@@ -127,13 +123,7 @@ spidev_sync_write(struct spidev_data *spidev, size_t len)
 	struct spi_transfer	t = {
 			.tx_buf		= spidev->tx_buffer,
 			.len		= len,
-#ifdef CONFIG_MACH_LONGCHEER
-			.delay_usecs	= 0,
-			.cs_change	= 0,
-			.speed_hz	= 960000,
-#else
 			.speed_hz	= spidev->speed_hz,
-#endif
 		};
 	struct spi_message	m;
 
@@ -173,16 +163,6 @@ spidev_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 	spidev = filp->private_data;
 
 	mutex_lock(&spidev->buf_lock);
-#ifdef CONFIG_MACH_LONGCHEER
-	if (!spidev->rx_buffer) {
-		spidev->rx_buffer = kmalloc(bufsiz, GFP_KERNEL);
-		if (!spidev->rx_buffer) {
-			dev_dbg(&spidev->spi->dev, "open/ENOMEM\n");
-			status = -ENOMEM;
-			goto read_unlock;
-		}
-	}
-#endif
 	status = spidev_sync_read(spidev, count);
 	if (status > 0) {
 		unsigned long	missing;
@@ -193,11 +173,6 @@ spidev_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 		else
 			status = status - missing;
 	}
-#ifdef CONFIG_MACH_LONGCHEER
-	kfree(spidev->rx_buffer);
-	spidev->rx_buffer = NULL;
-read_unlock:
-#endif
 	mutex_unlock(&spidev->buf_lock);
 
 	return status;
@@ -213,34 +188,17 @@ spidev_write(struct file *filp, const char __user *buf,
 	unsigned long		missing;
 
 	/* chipselect only toggles at start or end of operation */
-#ifndef CONFIG_MACH_LONGCHEER
 	if (count > bufsiz)
 		return -EMSGSIZE;
-#endif
 
 	spidev = filp->private_data;
 
 	mutex_lock(&spidev->buf_lock);
-#ifdef CONFIG_MACH_LONGCHEER
-	if (!spidev->tx_buffer) {
-		spidev->tx_buffer = kmalloc(count, GFP_KERNEL);
-		if (!spidev->tx_buffer) {
-			dev_dbg(&spidev->spi->dev, "open/ENOMEM\n");
-			status = -ENOMEM;
-			goto write_unlock;
-		}
-	}
-#endif
 	missing = copy_from_user(spidev->tx_buffer, buf, count);
 	if (missing == 0)
 		status = spidev_sync_write(spidev, count);
 	else
 		status = -EFAULT;
-#ifdef CONFIG_MACH_LONGCHEER
-	kfree(spidev->tx_buffer);
-	spidev->tx_buffer = NULL;
-write_unlock:
-#endif
 	mutex_unlock(&spidev->buf_lock);
 
 	return status;
@@ -266,24 +224,6 @@ static int spidev_message(struct spidev_data *spidev,
 	 * We walk the array of user-provided transfers, using each one
 	 * to initialize a kernel version of the same transfer.
 	 */
-#ifdef CONFIG_MACH_LONGCHEER
-	if (!spidev->rx_buffer) {
-		spidev->rx_buffer = kmalloc(bufsiz, GFP_KERNEL);
-		if (!spidev->rx_buffer) {
-			dev_dbg(&spidev->spi->dev, "open/ENOMEM\n");
-			status = -ENOMEM;
-			goto rxbuffer_err;
-		}
-	}
-	if (!spidev->tx_buffer) {
-		spidev->tx_buffer = kmalloc(bufsiz, GFP_KERNEL);
-		if (!spidev->tx_buffer) {
-			dev_dbg(&spidev->spi->dev, "open/ENOMEM\n");
-			status = -ENOMEM;
-			goto txbuffer_err;
-		}
-	}
-#endif
 	tx_buf = spidev->tx_buffer;
 	rx_buf = spidev->rx_buffer;
 	total = 0;
@@ -376,14 +316,6 @@ static int spidev_message(struct spidev_data *spidev,
 	status = total;
 
 done:
-#ifdef CONFIG_MACH_LONGCHEER
-	kfree(spidev->tx_buffer);
-	spidev->tx_buffer = NULL;
-txbuffer_err:
-	kfree(spidev->rx_buffer);
-	spidev->rx_buffer = NULL;
-rxbuffer_err:
-#endif
 	kfree(k_xfers);
 	return status;
 }
@@ -667,7 +599,6 @@ static int spidev_open(struct inode *inode, struct file *filp)
 		goto err_find_dev;
 	}
 
-#ifndef CONFIG_MACH_LONGCHEER
 	if (!spidev->tx_buffer) {
 		spidev->tx_buffer = kmalloc(bufsiz, GFP_KERNEL);
 		if (!spidev->tx_buffer) {
@@ -685,7 +616,6 @@ static int spidev_open(struct inode *inode, struct file *filp)
 			goto err_alloc_rx_buf;
 		}
 	}
-#endif
 
 	spidev->users++;
 	filp->private_data = spidev;
@@ -694,11 +624,9 @@ static int spidev_open(struct inode *inode, struct file *filp)
 	mutex_unlock(&device_list_lock);
 	return 0;
 
-#ifndef CONFIG_MACH_LONGCHEER
 err_alloc_rx_buf:
 	kfree(spidev->tx_buffer);
 	spidev->tx_buffer = NULL;
-#endif
 err_find_dev:
 	mutex_unlock(&device_list_lock);
 	return status;
@@ -707,37 +635,35 @@ err_find_dev:
 static int spidev_release(struct inode *inode, struct file *filp)
 {
 	struct spidev_data	*spidev;
+	int			dofree;
 
 	mutex_lock(&device_list_lock);
 	spidev = filp->private_data;
 	filp->private_data = NULL;
 
+	spin_lock_irq(&spidev->spi_lock);
+	/* ... after we unbound from the underlying device? */
+	dofree = (spidev->spi == NULL);
+	spin_unlock_irq(&spidev->spi_lock);
+
 	/* last close? */
 	spidev->users--;
 	if (!spidev->users) {
-		int		dofree;
 
-#ifndef CONFIG_MACH_LONGCHEER
 		kfree(spidev->tx_buffer);
 		spidev->tx_buffer = NULL;
 
 		kfree(spidev->rx_buffer);
 		spidev->rx_buffer = NULL;
-#endif
-
-		spin_lock_irq(&spidev->spi_lock);
-		if (spidev->spi)
-			spidev->speed_hz = spidev->spi->max_speed_hz;
-
-		/* ... after we unbound from the underlying device? */
-		dofree = (spidev->spi == NULL);
-		spin_unlock_irq(&spidev->spi_lock);
 
 		if (dofree)
 			kfree(spidev);
+		else
+			spidev->speed_hz = spidev->spi->max_speed_hz;
 	}
 #ifdef CONFIG_SPI_SLAVE
-	spi_slave_abort(spidev->spi);
+	if (!dofree)
+		spi_slave_abort(spidev->spi);
 #endif
 	mutex_unlock(&device_list_lock);
 
@@ -846,13 +772,13 @@ static int spidev_remove(struct spi_device *spi)
 {
 	struct spidev_data	*spidev = spi_get_drvdata(spi);
 
+	/* prevent new opens */
+	mutex_lock(&device_list_lock);
 	/* make sure ops on existing fds can abort cleanly */
 	spin_lock_irq(&spidev->spi_lock);
 	spidev->spi = NULL;
 	spin_unlock_irq(&spidev->spi_lock);
 
-	/* prevent new opens */
-	mutex_lock(&device_list_lock);
 	list_del(&spidev->device_entry);
 	device_destroy(spidev_class, spidev->devt);
 	clear_bit(MINOR(spidev->devt), minors);
